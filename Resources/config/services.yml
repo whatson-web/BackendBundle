@@ -1,0 +1,19 @@
+services:
+    bk.wh.back.base_controller:
+        class: WH\BackendBundle\Controller\Backend\BaseController
+        arguments: ['@service_container']
+    bk.wh.back.index_controller:
+        class: WH\BackendBundle\Services\Backend\IndexController
+        arguments: ['@service_container']
+    bk.wh.back.order_controller:
+        class: WH\BackendBundle\Services\Backend\OrderController
+        arguments: ['@service_container']
+    bk.wh.back.create_controller:
+        class: WH\BackendBundle\Services\Backend\CreateController
+        arguments: ['@service_container']
+    bk.wh.back.update_controller:
+        class: WH\BackendBundle\Services\Backend\UpdateController
+        arguments: ['@service_container']
+    bk.wh.back.delete_controller:
+        class: WH\BackendBundle\Services\Backend\DeleteController
+        arguments: ['@service_container']
