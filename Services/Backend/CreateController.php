@@ -43,6 +43,7 @@ class CreateController extends BaseController implements BaseControllerInterface
     {
 
         $config = $this->getConfig($entityPathConfig, 'create');
+        $globalConfig = $this->getGlobalConfig($entityPathConfig);
 
         $urlData = $arguments;
 
@@ -123,6 +124,7 @@ class CreateController extends BaseController implements BaseControllerInterface
         return $this->container->get('templating')->renderResponse(
             '@WHBackendTemplate/BackendTemplate/View/modal.html.twig',
             array(
+                'globalConfig'     => $globalConfig,
                 'title'            => $title,
                 'form'             => $form->createView(),
                 'formAction'       => $this->getActionUrl($entityPathConfig, 'create', $urlData),

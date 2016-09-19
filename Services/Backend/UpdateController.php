@@ -62,6 +62,9 @@ class UpdateController extends BaseController implements BaseControllerInterface
         $renderVars = array();
 
         $config = $this->getConfig($entityPathConfig, 'update');
+        $globalConfig = $this->getGlobalConfig($entityPathConfig);
+
+        $renderVars['globalConfig'] = $globalConfig;
 
         $renderVars['title'] = $config['title'];
 

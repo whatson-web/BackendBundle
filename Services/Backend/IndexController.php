@@ -47,6 +47,9 @@ class IndexController extends BaseController implements BaseControllerInterface
         $conditions = array();
 
         $config = $this->getConfig($entityPathConfig, 'index');
+        $globalConfig = $this->getGlobalConfig($entityPathConfig);
+
+        $renderVars['globalConfig'] = $globalConfig;
 
         $urlData = $arguments;
 
