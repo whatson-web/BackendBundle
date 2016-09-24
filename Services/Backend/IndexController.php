@@ -73,6 +73,13 @@ class IndexController extends BaseController implements BaseControllerInterface
                 );
             }
         }
+        if (isset($tablePanelProperties['tableFields']['buttons'])) {
+
+            $tablePanelProperties['tableFields']['buttons'] = $this->transformActionIntoRoute(
+                $tablePanelProperties['tableFields']['buttons'],
+                $entityPathConfig
+            );
+        }
         $renderVars['tablePanelProperties'] = $tablePanelProperties;
 
         if ($this->search) {

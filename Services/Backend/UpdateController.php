@@ -68,7 +68,7 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
         $renderVars['title'] = $config['title'];
 
-        $formFields = $config['formFields'];
+        $formFields = $this->getFormFields($config['formFields'], $entityPathConfig);
 
         $form = $this->getEntityForm($formFields, $entityPathConfig, $data);
 
@@ -134,23 +134,22 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
             $renderVars['central'] = $config['central'];
 
-            foreach ($config['column']['panelZones'] as &$panelZone) {
+            foreach ($config['column']['panelZones'] as $key => $panelZone) {
 
-                $formFields = array();
-                $fields = $panelZone['fields'];
-                foreach ($fields as $field) {
-                    $formFields[$field] = $config['formFields'][$field];
-                    $formFields[$field]['col'] = 12;
-                }
+                $panelZone['form'] = $form;
+                $panelZone['formFields'] = $this->getFormFields($panelZone['fields'], $entityPathConfig);
 
                 unset($panelZone['fields']);
-                $panelZone['form'] = $form;
-                $panelZone['formFields'] = $formFields;
 
-                foreach ($panelZone['footerListFormButtons'] as $field => &$footerListFormButton) {
+                foreach ($panelZone['footerListFormButtons'] as $field => $footerListFormButton) {
+
                     $footerListFormButton = array_merge($footerListFormButton, $config['formFields'][$field]);
                     $footerListFormButton['form'] = $form;
+
+                    $panelZone['footerListFormButtons'][$field] = $footerListFormButton;
                 }
+
+                $config['column']['panelZones'][$key] = $panelZone;
             }
 
             $renderVars['column'] = $config['column'];

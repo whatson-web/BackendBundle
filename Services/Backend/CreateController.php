@@ -48,7 +48,7 @@ class CreateController extends BaseController implements BaseControllerInterface
         $urlData = $arguments;
 
         $title = $config['title'];
-        $formFields = $config['formFields'];
+        $formFields = $this->getFormFields($config['formFields'], $entityPathConfig);
         $footerFormFields = $config['footerFormFields'];
 
         $entityClass = new \ReflectionClass($this->getEntityPath($entityPathConfig));

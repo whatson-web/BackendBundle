@@ -277,8 +277,9 @@ class BaseController extends Controller implements BaseControllerInterface
     /**
      * @param $formFields
      * @param $entityPathConfig
+     * @param $data
      *
-     * @return \Symfony\Component\Form\FormInterface
+     * @return mixed|\Symfony\Component\Form\FormInterface
      */
     public function getEntityForm($formFields, $entityPathConfig, $data)
     {
@@ -314,6 +315,52 @@ class BaseController extends Controller implements BaseControllerInterface
         $form = $this->addFormFieldsToForm($form, $formFields);
 
         return $form->getForm();
+    }
+
+    /**
+     * @param $configFormFields
+     * @param $entityPathConfig
+     *
+     * @return array
+     */
+    public function getFormFields($configFormFields, $entityPathConfig)
+    {
+
+        $globalConfig = $this->getGlobalConfig($entityPathConfig);
+
+        $formFields = array();
+
+        foreach ($configFormFields as $key => $configFormField) {
+
+            if (is_array($configFormField)) {
+
+                $formFieldSlug = $key;
+
+                if (!isset($configFormField['field'])) {
+
+                    $formField = $configFormField;
+
+                } else {
+
+                    $formField = array_merge($globalConfig['formFields'][$key], $configFormField);
+                }
+
+            } else {
+
+                if (is_integer($key)) {
+
+                    $formFieldSlug = $configFormField;
+                } else {
+                    $formFieldSlug = $key;
+                }
+
+                $formField = $globalConfig['formFields'][$formFieldSlug];
+            }
+
+            $formFields[$formFieldSlug] = $formField;
+        }
+
+        return $formFields;
     }
 
     /**
@@ -426,6 +473,33 @@ class BaseController extends Controller implements BaseControllerInterface
         }
 
         return $data;
+    }
+
+    /**
+     * @param $fields
+     * @param $entityPathConfig
+     *
+     * @return mixed
+     */
+    public function transformActionIntoRoute($fields, $entityPathConfig)
+    {
+
+        $globalConfig = $this->getGlobalConfig($entityPathConfig);
+
+        foreach ($fields as $key => $field) {
+
+            if (isset($field['action'])) {
+
+                $action = $globalConfig['actions'][$field['action']];
+                $field = array_merge($field, $action);
+
+                unset($field['action']);
+
+                $fields[$key] = $field;
+            }
+        }
+
+        return $fields;
     }
 
 }
