@@ -47,6 +47,9 @@ class IndexController extends BaseController implements BaseControllerInterface
         $conditions = array();
 
         $config = $this->getConfig($entityPathConfig, 'index');
+        $globalConfig = $this->getGlobalConfig($entityPathConfig);
+
+        $renderVars['globalConfig'] = $globalConfig;
 
         $urlData = $arguments;
 
@@ -69,6 +72,13 @@ class IndexController extends BaseController implements BaseControllerInterface
                     $urlData
                 );
             }
+        }
+        if (isset($tablePanelProperties['tableFields']['buttons'])) {
+
+            $tablePanelProperties['tableFields']['buttons'] = $this->transformActionIntoRoute(
+                $tablePanelProperties['tableFields']['buttons'],
+                $entityPathConfig
+            );
         }
         $renderVars['tablePanelProperties'] = $tablePanelProperties;
 
