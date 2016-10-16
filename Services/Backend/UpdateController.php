@@ -103,10 +103,13 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
             $em->persist($data);
             $em->flush();
-
-            $redirectUrl = $this->getActionUrl($entityPathConfig, 'index', $data);
-            if ($form->has('saveAndStay') && $form->get('saveAndStay')->isClicked()) {
-                $redirectUrl = $this->getActionUrl($entityPathConfig, 'update', $data);
+            if(isset($config['redirectionAction'])) {
+                $redirectUrl = $this->getActionUrl($entityPathConfig, $config['redirectionAction'], $data, true);
+            } else {
+                $redirectUrl = $this->getActionUrl($entityPathConfig, 'index', $data);
+                if ($form->has('saveAndStay') && $form->get('saveAndStay')->isClicked()) {
+                    $redirectUrl = $this->getActionUrl($entityPathConfig, 'update', $data);
+                }
             }
 
             if ($request->isXmlHttpRequest()) {
@@ -162,6 +165,9 @@ class UpdateController extends BaseController implements BaseControllerInterface
         $view = '@WHBackendTemplate/BackendTemplate/View/update.html.twig';
         if ($this->modal) {
             $view = '@WHBackendTemplate/BackendTemplate/View/modal.html.twig';
+        }
+        if (isset($config['view'])) {
+            $view = $config['view'];
         }
 
         return $this->container->get('templating')->renderResponse(

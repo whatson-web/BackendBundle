@@ -209,8 +209,10 @@ class BaseController extends Controller implements BaseControllerInterface
     }
 
     /**
-     * @param $entityPathConfig
-     * @param $action
+     * @param      $entityPathConfig
+     * @param      $action
+     * @param null $data
+     * @param bool $absolutePath
      *
      * @return string
      */
