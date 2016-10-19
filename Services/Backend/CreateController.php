@@ -21,6 +21,8 @@ class CreateController extends BaseController implements BaseControllerInterface
 
     protected $container;
 
+    private $modal = false;
+
     /**
      * SearchController constructor.
      *
@@ -108,21 +110,35 @@ class CreateController extends BaseController implements BaseControllerInterface
             $em->persist($data);
             $em->flush();
 
-            $redirectUrl = $this->getActionUrl($entityPathConfig, 'index', $data, true);
-            if ($request->query->get('submitButton') && $request->query->get('submitButton') == 'createEdit') {
-                $redirectUrl = $this->getActionUrl($entityPathConfig, 'update', $data, true);
+            if(isset($config['redirectionAction'])) {
+                $redirectUrl = $this->getActionUrl($entityPathConfig, $config['redirectionAction'], $data, true);
+            } else {
+                $redirectUrl = $this->getActionUrl($entityPathConfig, 'index', $data, true);
+                if ($request->query->get('submitButton') && $request->query->get('submitButton') == 'createEdit') {
+                    $redirectUrl = $this->getActionUrl($entityPathConfig, 'update', $data, true);
+                }
             }
 
-            return new JsonResponse(
-                array(
-                    'success'  => true,
-                    'redirect' => $redirectUrl,
-                )
-            );
+            if ($request->isXmlHttpRequest()) {
+
+                return new JsonResponse(
+                    array(
+                        'success'  => true,
+                        'redirect' => $redirectUrl,
+                    )
+                );
+            }
+
+            return $this->redirect($redirectUrl);
+        }
+
+        $view = '@WHBackendTemplate/BackendTemplate/View/modal.html.twig';
+        if (isset($config['view'])) {
+            $view = $config['view'];
         }
 
         return $this->container->get('templating')->renderResponse(
-            '@WHBackendTemplate/BackendTemplate/View/modal.html.twig',
+            $view,
             array(
                 'globalConfig'     => $globalConfig,
                 'title'            => $title,
@@ -150,6 +166,10 @@ class CreateController extends BaseController implements BaseControllerInterface
         if (!isset($config['formFields'])) {
 
             throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "formFields"');
+        }
+
+        if (isset($config['modal']) && $config['modal'] == 'false') {
+            $this->modal = false;
         }
 
         return true;
