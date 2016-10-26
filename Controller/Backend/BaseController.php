@@ -12,6 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Yaml\Yaml;
+use WH\AmazonS3MediaBundle\Form\Type\AmazonS3FileType;
 use WH\LibBundle\Utils\Inflector;
 
 /**
@@ -426,6 +427,10 @@ class BaseController extends Controller implements BaseControllerInterface
 					$class = 'tinymce ' . $class;
 					$options['attr']['class'] = $class;
 
+					break;
+
+				case 'amazon_s3_file':
+					$properties['type'] = AmazonS3FileType::class;
 					break;
 
 				case 'submit':
