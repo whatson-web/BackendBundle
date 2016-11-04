@@ -32,7 +32,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getEntityPathConfig()
 	{
-
 		return array(
 			'bundlePrefix' => $this->bundlePrefix,
 			'bundle'       => $this->bundle,
@@ -48,7 +47,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getConfig($entityPathConfig, $action)
 	{
-
 		$ymlPath = $this->getYmlFilePath(
 			$entityPathConfig,
 			$action
@@ -62,7 +60,6 @@ class BaseController extends Controller implements BaseControllerInterface
 
 		$config = Yaml::parse(file_get_contents($ymlPath));
 		if ($this->validConfig($config)) {
-
 			return $config;
 		}
 
@@ -76,7 +73,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getGlobalConfig($entityPathConfig)
 	{
-
 		$ymlPath = $this->getYmlFilePath(
 			$entityPathConfig,
 			'global'
@@ -91,7 +87,6 @@ class BaseController extends Controller implements BaseControllerInterface
 		$config = Yaml::parse(file_get_contents($ymlPath));
 
 		if (!isset($config['actions'])) {
-
 			throw new NotFoundHttpException('Le fichier de configuration globale ne contient pas le champ "actions"');
 		}
 
@@ -105,7 +100,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getSlug($entityPathConfig)
 	{
-
 		$slug = '';
 		if (!empty($entityPathConfig['bundlePrefix'])) {
 
@@ -125,7 +119,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getEntityPath($entityPathConfig)
 	{
-
 		$entityPath = '';
 		if (!empty($entityPathConfig['bundlePrefix'])) {
 
@@ -161,7 +154,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	private function getYmlFilePath($entityPathConfig, $slug)
 	{
-
 		$rootDir = $this->get('kernel')->getRootDir();
 		$path = $rootDir . '/../src/';
 		if ($entityPathConfig['bundlePrefix'] != '') {
@@ -183,7 +175,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function validConfig($config)
 	{
-
 		return true;
 	}
 
@@ -196,11 +187,9 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getBreadcrumb($configBreadcrumbs, $entityPathConfig, $data = null)
 	{
-
 		$breadcrumb = array();
 
 		foreach ($configBreadcrumbs as $configBreadcrumb) {
-
 			$url = $this->getActionUrl($entityPathConfig, $configBreadcrumb['action'], $data);
 
 			$breadcrumb[$configBreadcrumb['label']] = $url;
@@ -217,7 +206,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getActionUrl($entityPathConfig, $action, $data = null, $absolutePath = false)
 	{
-
 		$globalConfig = $this->getGlobalConfig($entityPathConfig);
 
 		if (!isset($globalConfig['actions'][$action])) {
@@ -231,12 +219,10 @@ class BaseController extends Controller implements BaseControllerInterface
 		$route = $action['route'];
 
 		if (!isset($action['parameters'])) {
-
 			return $this->generateUrl($route, array(), $absolutePath);
 		}
 
 		if (isset($action['parameters']) && !$data) {
-
 			throw new NotFoundHttpException(
 				'L\'action "' . $action['route'] . '" requiert des paramètres et aucune donnée n\'a été reçue'
 			);
@@ -244,29 +230,23 @@ class BaseController extends Controller implements BaseControllerInterface
 
 		$parameters = array();
 		foreach ($action['parameters'] as $parameter) {
-
 			$routeParameter = Inflector::transformConditionInConditionParameter($parameter);
 
 			if (is_object($data)) {
-
 				$parameter = explode('.', $parameter);
 
 				$fieldValue = null;
 
 				foreach ($parameter as $field) {
-
 					if (!$fieldValue) {
-
 						$fieldValue = $data->{'get' . Inflector::camelizeWithFirstLetterUpper($field)}();
 					} else {
-
 						$fieldValue = $fieldValue->{'get' . Inflector::camelizeWithFirstLetterUpper($field)}();
 					}
 
 					$parameters[$routeParameter] = $fieldValue;
 				}
 			} elseif (is_array($data)) {
-
 				$parameters[$routeParameter] = $data[$parameter];
 			}
 		}
@@ -283,7 +263,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getEntityForm($formFields, $entityPathConfig, $data)
 	{
-
 		$dataClass = $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
 		if ($entityPathConfig['bundlePrefix'] != '') {
 			$dataClass = $entityPathConfig['bundlePrefix'] . '\\' . $dataClass;
@@ -309,7 +288,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getForm($formFields)
 	{
-
 		$form = $this->container->get('form.factory')->createNamedBuilder('searchForm');
 
 		$form = $this->addFormFieldsToForm($form, $formFields);
@@ -325,7 +303,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getFormFields($configFormFields, $entityPathConfig)
 	{
-
 		$globalConfig = $this->getGlobalConfig($entityPathConfig);
 
 		$formFields = array();
@@ -364,11 +341,9 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	private function addFormFieldsToForm($form, $formFields, $entityPathConfig = array())
 	{
-
 		foreach ($formFields as $formField => $properties) {
-
 			$options = array(
-				'label'    => $properties['label'],
+				'label'    => (!empty($properties['label'])) ? $properties['label'] : false,
 				'required' => false,
 			);
 
@@ -378,9 +353,7 @@ class BaseController extends Controller implements BaseControllerInterface
 				'class',
 			);
 			foreach ($optionsToGive as $optionToGive) {
-
 				if (!empty($properties[$optionToGive])) {
-
 					$options[$optionToGive] = $properties[$optionToGive];
 				}
 			}
@@ -431,6 +404,10 @@ class BaseController extends Controller implements BaseControllerInterface
 
 				case 'amazon_s3_file':
 					$properties['type'] = AmazonS3FileType::class;
+					break;
+
+				case 'form':
+					$properties['type'] = $properties['form'];
 					break;
 
 				case 'submit':
