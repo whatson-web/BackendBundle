@@ -73,6 +73,19 @@ class IndexController extends BaseController implements BaseControllerInterface
                 );
             }
         }
+
+        foreach ($tablePanelProperties['tableFields'] as $entityFieldName => $tableField) {
+	        if (!empty($globalConfig['formFields'][$entityFieldName])) {
+		        $entityFieldGlobalConfig = $globalConfig['formFields'][$entityFieldName];
+		        if (!empty($entityFieldGlobalConfig['label'])) {
+			        $tablePanelProperties['tableFields'][$entityFieldName]['label'] = $entityFieldGlobalConfig['label'];
+		        }
+		        if (!empty($entityFieldGlobalConfig['type'])) {
+			        $tablePanelProperties['tableFields'][$entityFieldName]['type'] = $entityFieldGlobalConfig['type'];
+		        }
+	        }
+        }
+
         if (isset($tablePanelProperties['tableFields']['buttons'])) {
 
             $tablePanelProperties['tableFields']['buttons'] = $this->transformActionIntoRoute(

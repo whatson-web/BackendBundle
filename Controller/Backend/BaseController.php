@@ -26,6 +26,7 @@ class BaseController extends Controller implements BaseControllerInterface
 	public $bundlePrefix = '';
 	public $bundle = '';
 	public $entity = '';
+	public $type = 'Backend';
 
 	/**
 	 * @return array
@@ -36,6 +37,7 @@ class BaseController extends Controller implements BaseControllerInterface
 			'bundlePrefix' => $this->bundlePrefix,
 			'bundle'       => $this->bundle,
 			'entity'       => $this->entity,
+			'type'         => $this->type,
 		);
 	}
 
@@ -136,7 +138,6 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	public function getRepositoryName($entityPathConfig)
 	{
-
 		$repositoryName = '';
 		if (!empty($entityPathConfig['bundlePrefix'])) {
 
@@ -149,6 +150,7 @@ class BaseController extends Controller implements BaseControllerInterface
 
 	/**
 	 * @param $entityPathConfig
+	 * @param $slug
 	 *
 	 * @return string
 	 */
@@ -159,11 +161,7 @@ class BaseController extends Controller implements BaseControllerInterface
 		if ($entityPathConfig['bundlePrefix'] != '') {
 			$path .= $entityPathConfig['bundlePrefix'] . '/';
 		}
-		$configFolder = 'Backend';
-		if ($entityPathConfig['bundle'] == 'SuperAdminBundle') {
-			$configFolder = 'SuperAdmin';
-		}
-		$path .= $entityPathConfig['bundle'] . '/Resources/config/' . $configFolder . '/' . $entityPathConfig['entity'] . '/' . $slug . '.yml';
+		$path .= $entityPathConfig['bundle'] . '/Resources/config/' . $entityPathConfig['type'] . '/' . $entityPathConfig['entity'] . '/' . $slug . '.yml';
 
 		return $path;
 	}
@@ -199,8 +197,10 @@ class BaseController extends Controller implements BaseControllerInterface
 	}
 
 	/**
-	 * @param $entityPathConfig
-	 * @param $action
+	 * @param      $entityPathConfig
+	 * @param      $action
+	 * @param null $data
+	 * @param bool $absolutePath
 	 *
 	 * @return string
 	 */
