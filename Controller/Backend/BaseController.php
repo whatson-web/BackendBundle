@@ -2,6 +2,7 @@
 
 namespace WH\BackendBundle\Controller\Backend;
 
+use FM\ElfinderBundle\Form\Type\ElFinderType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -12,8 +13,8 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Yaml\Yaml;
-use WH\AmazonS3MediaBundle\Form\Type\AmazonS3FileType;
 use WH\LibBundle\Utils\Inflector;
+use WH\MediaBundle\Form\Backend\FileType;
 
 /**
  * Class BaseController
@@ -229,9 +230,7 @@ class BaseController extends Controller implements BaseControllerInterface
 		}
 
 		$parameters = array();
-		foreach ($action['parameters'] as $parameter) {
-			$routeParameter = Inflector::transformConditionInConditionParameter($parameter);
-
+		foreach ($action['parameters'] as $routerParameterName => $parameter) {
 			if (is_object($data)) {
 				$parameter = explode('.', $parameter);
 
@@ -244,10 +243,10 @@ class BaseController extends Controller implements BaseControllerInterface
 						$fieldValue = $fieldValue->{'get' . Inflector::camelizeWithFirstLetterUpper($field)}();
 					}
 
-					$parameters[$routeParameter] = $fieldValue;
+					$parameters[$routerParameterName] = $fieldValue;
 				}
 			} elseif (is_array($data)) {
-				$parameters[$routeParameter] = $data[$parameter];
+				$parameters[$routerParameterName] = $data[$parameter];
 			}
 		}
 
@@ -402,8 +401,14 @@ class BaseController extends Controller implements BaseControllerInterface
 
 					break;
 
-				case 'amazon_s3_file':
-					$properties['type'] = AmazonS3FileType::class;
+				case 'wh_file':
+					$properties['type'] = FileType::class;
+					break;
+
+				case 'elfinder':
+					$properties['type'] = ElFinderType::class;
+					$properties['attr']['instance'] = 'default';
+					$properties['attr']['enable'] = true;
 					break;
 
 				case 'form':

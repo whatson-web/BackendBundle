@@ -113,7 +113,7 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
 				return new JsonResponse(
 					array(
-						'success'  => true,
+						'success' => true,
 						'redirect' => $redirectUrl,
 					)
 				);
@@ -130,6 +130,14 @@ class UpdateController extends BaseController implements BaseControllerInterface
 		$renderVars['formFields'] = $formFields;
 
 		if (!$this->modal) {
+
+			if (!empty($config['central']['viewLink']['action'])) {
+				$config['central']['viewLink']['url'] = $this->getActionUrl(
+					$entityPathConfig,
+					$config['central']['viewLink']['action'],
+					$data
+				);
+			}
 
 			$renderVars['central'] = $config['central'];
 
