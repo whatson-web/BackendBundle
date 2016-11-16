@@ -366,12 +366,37 @@ class BaseController extends Controller implements BaseControllerInterface
 				case 'choice':
 					$properties['type'] = ChoiceType::class;
 
-					if ($properties['options']['type'] == 'static') {
+					if (isset($properties['options']['type'])) {
+						switch ($properties['options']['type']) {
+							case 'static':
+								$field = 'get' . ucfirst($properties['options']['field']);
+								$entityPath = '\\' . $entityPathConfig['bundlePrefix'] . '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
+								$options['choices'] = $entityPath::$field();
+								$options['empty_value'] = false;
+								break;
 
-						$field = 'get' . Inflector::camelizeWithFirstLetterUpper($properties['options']['field']);
-						$entityPath = '\\' . $entityPathConfig['bundlePrefix'] . '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
-						$options['choices'] = $entityPath::$field();
-						$options['empty_value'] = false;
+							case 'parameter':
+
+								switch ($properties['options']['parameter']) {
+
+									case 'security.role_hierarchy.roles':
+										$roles = array_keys($this->container->getParameter($properties['options']['parameter']));
+										$roles = array_combine($roles, $roles);
+										$options['choices'] = $roles;
+										break;
+
+									default:
+										$options['choices'] = $this->container->getParameter($properties['options']['parameter']);
+										break;
+
+								}
+
+								break;
+						}
+					}
+
+					if (isset($properties['multiple'])) {
+						$options['multiple'] = $properties['multiple'];
 					}
 
 					break;
