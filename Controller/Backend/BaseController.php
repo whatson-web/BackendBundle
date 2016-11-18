@@ -61,6 +61,15 @@ class BaseController extends Controller implements BaseControllerInterface
 			);
 		}
 
+		$resourcesYmlPath = $this->getYmlResourcesFilePath(
+			$entityPathConfig,
+			$action
+		);
+
+		if (file_exists($resourcesYmlPath)) {
+			$ymlPath = $resourcesYmlPath;
+		}
+
 		$config = Yaml::parse(file_get_contents($ymlPath));
 		if ($this->validConfig($config)) {
 			return $config;
@@ -85,6 +94,15 @@ class BaseController extends Controller implements BaseControllerInterface
 			throw new NotFoundHttpException(
 				'Le fichier de configuration globale n\'existe pas. Il devrait être ici : ' . $ymlPath
 			);
+		}
+
+		$resourcesYmlPath = $this->getYmlResourcesFilePath(
+			$entityPathConfig,
+			'global'
+		);
+
+		if (file_exists($resourcesYmlPath)) {
+			$ymlPath = $resourcesYmlPath;
 		}
 
 		$config = Yaml::parse(file_get_contents($ymlPath));
@@ -147,6 +165,26 @@ class BaseController extends Controller implements BaseControllerInterface
 		$repositoryName .= $entityPathConfig['bundle'] . ':' . $entityPathConfig['entity'];
 
 		return $repositoryName;
+	}
+
+	/**
+	 * @param $entityPathConfig
+	 * @param $slug
+	 *
+	 * @return string
+	 */
+	private function getYmlResourcesFilePath($entityPathConfig, $slug)
+	{
+		$rootDir = $this->get('kernel')->getRootDir();
+		$path = $rootDir . '/Resources/';
+		$bundleName = '';
+		if ($entityPathConfig['bundlePrefix'] != '') {
+			$bundleName .= $entityPathConfig['bundlePrefix'];
+		}
+		$bundleName .= $entityPathConfig['bundle'];
+		$path .= $bundleName . '/config/' . $entityPathConfig['type'] . '/' . $entityPathConfig['entity'] . '/' . $slug . '.yml';
+
+		return $path;
 	}
 
 	/**
@@ -223,6 +261,10 @@ class BaseController extends Controller implements BaseControllerInterface
 			return $this->generateUrl($route, array(), $absolutePath);
 		}
 
+		if (!$data && isset($globalConfig['defaultData'])) {
+			$data = $globalConfig['defaultData'];
+		}
+
 		if (isset($action['parameters']) && !$data) {
 			throw new NotFoundHttpException(
 				'L\'action "' . $action['route'] . '" requiert des paramètres et aucune donnée n\'a été reçue'
@@ -230,6 +272,7 @@ class BaseController extends Controller implements BaseControllerInterface
 		}
 
 		$parameters = array();
+
 		foreach ($action['parameters'] as $routerParameterName => $parameter) {
 			if (is_object($data)) {
 				$parameter = explode('.', $parameter);
@@ -370,7 +413,11 @@ class BaseController extends Controller implements BaseControllerInterface
 						switch ($properties['options']['type']) {
 							case 'static':
 								$field = 'get' . ucfirst($properties['options']['field']);
-								$entityPath = '\\' . $entityPathConfig['bundlePrefix'] . '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
+								$entityPath = '';
+								if ($entityPathConfig['bundlePrefix']) {
+									$entityPath .= '\\' . $entityPathConfig['bundlePrefix'];
+								}
+								$entityPath .= '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
 								$options['choices'] = $entityPath::$field();
 								$options['empty_value'] = false;
 								break;
@@ -380,15 +427,18 @@ class BaseController extends Controller implements BaseControllerInterface
 								switch ($properties['options']['parameter']) {
 
 									case 'security.role_hierarchy.roles':
-										$roles = array_keys($this->container->getParameter($properties['options']['parameter']));
+										$roles = array_keys(
+											$this->container->getParameter($properties['options']['parameter'])
+										);
 										$roles = array_combine($roles, $roles);
 										$options['choices'] = $roles;
 										break;
 
 									default:
-										$options['choices'] = $this->container->getParameter($properties['options']['parameter']);
+										$options['choices'] = $this->container->getParameter(
+											$properties['options']['parameter']
+										);
 										break;
-
 								}
 
 								break;

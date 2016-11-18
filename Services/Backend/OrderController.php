@@ -17,84 +17,91 @@ use WH\LibBundle\Utils\Inflector;
 class OrderController extends BaseController implements BaseControllerInterface
 {
 
-    protected $container;
+	protected $container;
 
-    /**
-     * SearchController constructor.
-     *
-     * @param ContainerInterface $container
-     */
-    public function __construct(ContainerInterface $container)
-    {
+	/**
+	 * SearchController constructor.
+	 *
+	 * @param ContainerInterface $container
+	 */
+	public function __construct(ContainerInterface $container)
+	{
 
-        $this->container = $container;
-    }
+		$this->container = $container;
+	}
 
-    /**
-     * @param         $entityPathConfig
-     * @param Request $request
-     * @param array   $arguments
-     *
-     * @return \Symfony\Component\HttpFoundation\Response
-     */
-    public function order($entityPathConfig, Request $request, $arguments = array())
-    {
+	/**
+	 * @param         $entityPathConfig
+	 * @param Request $request
+	 * @param array   $arguments
+	 *
+	 * @return \Symfony\Component\HttpFoundation\Response
+	 */
+	public function order($entityPathConfig, Request $request, $arguments = array())
+	{
 
-        $renderVars['entityPathConfig'] = $entityPathConfig;
+		$renderVars['entityPathConfig'] = $entityPathConfig;
 
-        $urlData = $arguments;
+		$urlData = $arguments;
 
-        $doctrine = $this->get('doctrine');
+		$doctrine = $this->get('doctrine');
 
-        $entityRepository = $doctrine->getRepository($this->getRepositoryName($entityPathConfig));
+		$entityRepository = $doctrine->getRepository($this->getRepositoryName($entityPathConfig));
 
-        if ($request->getMethod() == 'POST') {
+		if ($request->getMethod() == 'POST') {
 
-            $em = $doctrine->getManager();
+			$em = $doctrine->getManager();
 
-            $data = $request->request->all();
+			$data = $request->request->all();
 
-            $existingLftRgt = array();
-            $orderedEntities = array();
+			$existingLftRgt = array();
+			$orderedEntities = array();
 
-            $entities = $entityRepository->get(
-                'all',
-                array(
-                    'conditions' => array(
-                        Inflector::camelize($entityPathConfig['entity']).'.id' => $data['ids'],
-                    ),
-                )
-            );
-            foreach ($entities as $entity) {
+			$entities = $entityRepository->get(
+				'all',
+				array(
+					'conditions' => array(
+						Inflector::camelize($entityPathConfig['entity']) . '.id' => $data['ids'],
+					),
+				)
+			);
+			foreach ($entities as $entity) {
 
-                $existingLftRgt[] = array(
-                    'lft' => $entity->getLft(),
-                    'rgt' => $entity->getRgt(),
-                );
-                $orderedEntities[$entity->getId()] = $entity;
-            }
+				$existingLftRgt[] = array(
+					'lft' => $entity->getLft(),
+					'rgt' => $entity->getRgt(),
+				);
+				$orderedEntities[$entity->getId()] = $entity;
+			}
 
-            foreach ($data['ids'] as $key => $id) {
+			foreach ($data['ids'] as $key => $id) {
 
-                $orderedEntity = $orderedEntities[$id];
+				$orderedEntity = $orderedEntities[$id];
 
-                $orderedEntity->setLft($existingLftRgt[$key]['lft']);
-                $orderedEntity->setRgt($existingLftRgt[$key]['rgt']);
+				$orderedEntity->setLft($existingLftRgt[$key]['lft']);
+				$orderedEntity->setRgt($existingLftRgt[$key]['rgt']);
 
-                $em->persist($orderedEntity);
-                $em->flush();
-            }
-        }
+				$em->persist($orderedEntity);
+				$em->flush();
+			}
 
-        return new JsonResponse(
-            array(
-                'success'  => true,
-                'redirect' => $this->getActionUrl(
-                    $entityPathConfig,
-                    'index',
-                    $urlData
-                ),
-            )
-        );
-    }
+			return new JsonResponse(
+				array(
+					'success' => true,
+					'reload'  => true,
+				)
+			);
+		}
+
+		return new JsonResponse(
+			array(
+				'success'  => true,
+				'redirect' => $this->getActionUrl(
+					$entityPathConfig,
+					'index',
+					$urlData
+				),
+			)
+		);
+	}
 }

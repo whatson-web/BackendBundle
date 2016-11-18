@@ -19,159 +19,160 @@ use WH\LibBundle\Utils\Inflector;
 class CreateController extends BaseController implements BaseControllerInterface
 {
 
-    protected $container;
+	protected $container;
 
-    private $modal = false;
+	private $modal = false;
 
-    /**
-     * SearchController constructor.
-     *
-     * @param ContainerInterface $container
-     */
-    public function __construct(ContainerInterface $container)
-    {
+	/**
+	 * SearchController constructor.
+	 *
+	 * @param ContainerInterface $container
+	 */
+	public function __construct(ContainerInterface $container)
+	{
 
-        $this->container = $container;
-    }
+		$this->container = $container;
+	}
 
-    /**
-     * @param         $entityPathConfig
-     * @param Request $request
-     * @param array   $arguments
-     *
-     * @return \Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
-     */
-    public function create($entityPathConfig, Request $request, $arguments = array())
-    {
+	/**
+	 * @param         $entityPathConfig
+	 * @param Request $request
+	 * @param array   $arguments
+	 *
+	 * @return \Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
+	 */
+	public function create($entityPathConfig, Request $request, $arguments = array())
+	{
+		$config = $this->getConfig($entityPathConfig, 'create');
+		$globalConfig = $this->getGlobalConfig($entityPathConfig);
 
-        $config = $this->getConfig($entityPathConfig, 'create');
-        $globalConfig = $this->getGlobalConfig($entityPathConfig);
+		$urlData = $arguments;
 
-        $urlData = $arguments;
+		$title = $config['title'];
+		$formFields = $this->getFormFields($config['formFields'], $entityPathConfig);
+		$footerFormFields = $config['footerFormFields'];
 
-        $title = $config['title'];
-        $formFields = $this->getFormFields($config['formFields'], $entityPathConfig);
-        $footerFormFields = $config['footerFormFields'];
+		$entityClass = new \ReflectionClass($this->getEntityPath($entityPathConfig));
+		$data = $entityClass->newInstanceArgs();
 
-        $entityClass = new \ReflectionClass($this->getEntityPath($entityPathConfig));
-        $data = $entityClass->newInstanceArgs();
+		foreach ($arguments as $argument => $value) {
 
-        foreach ($arguments as $argument => $value) {
+			$argument = explode('.', $argument);
 
-            $argument = explode('.', $argument);
+			$argumentEntityRepositoryName = '';
+			if ($entityPathConfig['bundlePrefix'] != '') {
+				$argumentEntityRepositoryName .= $entityPathConfig['bundlePrefix'];
+			}
+			$argumentEntityRepositoryName .= $entityPathConfig['bundle'] . ':' . ucfirst($argument[0]);
 
-            $argumentEntityRepositoryName = $entityPathConfig['bundlePrefix'].$entityPathConfig['bundle'].':'.Inflector::camelizeWithFirstLetterUpper(
-                    $argument[0]
-                );
+			$argumentValue = $this->container->get('doctrine')->getRepository($argumentEntityRepositoryName)->get(
+				'one',
+				array(
+					'conditions' => array(
+						$argument[0] . '.' . $argument[1] => $value,
+					),
+				)
+			);
+			$data->{'set' . ucfirst($argument[0])}($argumentValue);
+		}
 
-            $argumentValue = $this->container->get('doctrine')->getRepository($argumentEntityRepositoryName)->get(
-                'one',
-                array(
-                    'conditions' => array(
-                        $argument[0].'.'.$argument[1] => $value,
-                    ),
-                )
-            );
-            $data->{'set'.Inflector::camelizeWithFirstLetterUpper($argument[0])}($argumentValue);
-        }
+		$form = $this->getEntityForm($formFields, $entityPathConfig, $data);
 
-        $form = $this->getEntityForm($formFields, $entityPathConfig, $data);
+		if (isset($footerFormFields['create'])) {
 
-        if (isset($footerFormFields['create'])) {
+			$form->add(
+				'create',
+				SubmitType::class,
+				array(
+					'label' => 'Créer',
+				)
+			);
+		}
 
-            $form->add(
-                'create',
-                SubmitType::class,
-                array(
-                    'label' => 'Créer',
-                )
-            );
-        }
+		if (isset($footerFormFields['createEdit'])) {
 
-        if (isset($footerFormFields['createEdit'])) {
+			$form->add(
+				'createEdit',
+				SubmitType::class,
+				array(
+					'label' => 'Créer & Editer',
+				)
+			);
+		}
 
-            $form->add(
-                'createEdit',
-                SubmitType::class,
-                array(
-                    'label' => 'Créer & Editer',
-                )
-            );
-        }
+		$form->handleRequest($request);
 
-        $form->handleRequest($request);
+		if ($form->isSubmitted()) {
 
-        if ($form->isSubmitted()) {
+			$data = $form->getData();
 
-            $data = $form->getData();
+			$em = $this->container->get('doctrine')->getManager();
 
-            $em = $this->container->get('doctrine')->getManager();
+			$em->persist($data);
+			$em->flush();
 
-            $em->persist($data);
-            $em->flush();
+			if (isset($config['redirectionAction'])) {
+				$redirectUrl = $this->getActionUrl($entityPathConfig, $config['redirectionAction'], $data, true);
+			} else {
+				$redirectUrl = $this->getActionUrl($entityPathConfig, 'index', $data, true);
+				if ($request->query->get('submitButton') && $request->query->get('submitButton') == 'createEdit') {
+					$redirectUrl = $this->getActionUrl($entityPathConfig, 'update', $data, true);
+				}
+			}
 
-            if(isset($config['redirectionAction'])) {
-                $redirectUrl = $this->getActionUrl($entityPathConfig, $config['redirectionAction'], $data, true);
-            } else {
-                $redirectUrl = $this->getActionUrl($entityPathConfig, 'index', $data, true);
-                if ($request->query->get('submitButton') && $request->query->get('submitButton') == 'createEdit') {
-                    $redirectUrl = $this->getActionUrl($entityPathConfig, 'update', $data, true);
-                }
-            }
+			if ($request->isXmlHttpRequest()) {
 
-            if ($request->isXmlHttpRequest()) {
+				return new JsonResponse(
+					array(
+						'success'  => true,
+						'redirect' => $redirectUrl,
+					)
+				);
+			}
 
-                return new JsonResponse(
-                    array(
-                        'success'  => true,
-                        'redirect' => $redirectUrl,
-                    )
-                );
-            }
+			return $this->redirect($redirectUrl);
+		}
 
-            return $this->redirect($redirectUrl);
-        }
+		$view = '@WHBackendTemplate/BackendTemplate/View/modal.html.twig';
+		if (isset($config['view'])) {
+			$view = $config['view'];
+		}
 
-        $view = '@WHBackendTemplate/BackendTemplate/View/modal.html.twig';
-        if (isset($config['view'])) {
-            $view = $config['view'];
-        }
+		return $this->container->get('templating')->renderResponse(
+			$view,
+			array(
+				'globalConfig'     => $globalConfig,
+				'title'            => $title,
+				'form'             => $form->createView(),
+				'formAction'       => $this->getActionUrl($entityPathConfig, 'create', $urlData),
+				'formFields'       => $formFields,
+				'footerFormFields' => $footerFormFields,
+			)
+		);
+	}
 
-        return $this->container->get('templating')->renderResponse(
-            $view,
-            array(
-                'globalConfig'     => $globalConfig,
-                'title'            => $title,
-                'form'             => $form->createView(),
-                'formAction'       => $this->getActionUrl($entityPathConfig, 'create', $urlData),
-                'formFields'       => $formFields,
-                'footerFormFields' => $footerFormFields,
-            )
-        );
-    }
+	/**
+	 * @param $config
+	 *
+	 * @return bool
+	 */
+	public function validConfig($config)
+	{
 
-    /**
-     * @param $config
-     *
-     * @return bool
-     */
-    public function validConfig($config)
-    {
+		if (!isset($config['title'])) {
 
-        if (!isset($config['title'])) {
+			throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "title"');
+		}
 
-            throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "title"');
-        }
+		if (!isset($config['formFields'])) {
 
-        if (!isset($config['formFields'])) {
+			throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "formFields"');
+		}
 
-            throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "formFields"');
-        }
+		if (isset($config['modal']) && $config['modal'] == 'false') {
+			$this->modal = false;
+		}
 
-        if (isset($config['modal']) && $config['modal'] == 'false') {
-            $this->modal = false;
-        }
-
-        return true;
-    }
+		return true;
+	}
 }

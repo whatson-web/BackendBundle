@@ -80,9 +80,6 @@ class IndexController extends BaseController implements BaseControllerInterface
 		        if (!empty($entityFieldGlobalConfig['label'])) {
 			        $tablePanelProperties['tableFields'][$entityFieldName]['label'] = $entityFieldGlobalConfig['label'];
 		        }
-		        if (!empty($entityFieldGlobalConfig['type'])) {
-			        $tablePanelProperties['tableFields'][$entityFieldName]['type'] = $entityFieldGlobalConfig['type'];
-		        }
 	        }
         }
 
