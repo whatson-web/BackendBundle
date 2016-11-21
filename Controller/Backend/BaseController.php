@@ -195,12 +195,13 @@ class BaseController extends Controller implements BaseControllerInterface
 	 */
 	private function getYmlFilePath($entityPathConfig, $slug)
 	{
-		$rootDir = $this->get('kernel')->getRootDir();
-		$path = $rootDir . '/../src/';
+		$path = '@';
 		if ($entityPathConfig['bundlePrefix'] != '') {
-			$path .= $entityPathConfig['bundlePrefix'] . '/';
+			$path .= $entityPathConfig['bundlePrefix'];
 		}
 		$path .= $entityPathConfig['bundle'] . '/Resources/config/' . $entityPathConfig['type'] . '/' . $entityPathConfig['entity'] . '/' . $slug . '.yml';
+
+		$path = $this->get('kernel')->locateResource($path);
 
 		return $path;
 	}
