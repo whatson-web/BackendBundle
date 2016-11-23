@@ -7,6 +7,7 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -298,24 +299,30 @@ class BaseController extends Controller implements BaseControllerInterface
 	}
 
 	/**
-	 * @param $formFields
-	 * @param $entityPathConfig
-	 * @param $data
+	 * @param        $formFields
+	 * @param        $entityPathConfig
+	 * @param        $data
+	 * @param string $formName
+	 * @param array  $formOptions
 	 *
 	 * @return mixed|\Symfony\Component\Form\FormInterface
 	 */
-	public function getEntityForm($formFields, $entityPathConfig, $data)
+	public function getEntityForm($formFields, $entityPathConfig, $data, $formName = 'form', $formOptions = array())
 	{
 		$dataClass = $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
 		if ($entityPathConfig['bundlePrefix'] != '') {
 			$dataClass = $entityPathConfig['bundlePrefix'] . '\\' . $dataClass;
 		}
 
-		$form = $this->container->get('form.factory')->create(
+		$form = $this->container->get('form.factory')->createNamed(
+			$formName,
 			'Symfony\Component\Form\Extension\Core\Type\FormType',
 			$data,
-			array(
-				'data_class' => $dataClass,
+			array_merge(
+				array(
+					'data_class' => $dataClass,
+				),
+				$formOptions
 			)
 		);
 
@@ -351,8 +358,17 @@ class BaseController extends Controller implements BaseControllerInterface
 		$formFields = array();
 
 		foreach ($configFormFields as $key => $configFormField) {
+			$formFieldSlug = null;
+			if (!is_array($configFormField) && preg_match('#.*\..*#', $configFormField)) {
+				$formFieldSlug = $configFormField;
+				$configFormField = explode('.', $configFormField);
+				$configFormField = array_combine($configFormField, $configFormField);
+				dump($configFormField);
+			}
 			if (is_array($configFormField)) {
-				$formFieldSlug = $key;
+				if (!$formFieldSlug) {
+					$formFieldSlug = $key;
+				}
 
 				if (isset($globalConfig['formFields'][$key])) {
 					$formField = array_merge($globalConfig['formFields'][$key], $configFormField);
@@ -491,17 +507,41 @@ class BaseController extends Controller implements BaseControllerInterface
 					$properties['type'] = $properties['form'];
 					break;
 
+				case 'sub-form':
+					$properties['type'] = FormType::class;
+					break;
+
 				case 'submit':
 					unset($options['required']);
 					$properties['type'] = SubmitType::class;
 					break;
 			}
 
-			$form->add(
-				$formField,
-				$properties['type'],
-				$options
-			);
+			if ($properties['type'] == FormType::class) {
+				$entityPathConfigPage = array(
+					'bundlePrefix' => 'WH',
+					'bundle'       => 'CmsBundle',
+					'entity'       => 'Page',
+					'type'         => 'Backend',
+				);
+				$formData = $form->getData();
+				$subForm = $this->getEntityForm(
+					$properties['fields'],
+					$entityPathConfigPage,
+					$formData->getPage(),
+					'page',
+					array(
+						'auto_initialize' => false,
+					)
+				);
+				$form->add($subForm);
+			} else {
+				$form->add(
+					$formField,
+					$properties['type'],
+					$options
+				);
+			}
 		}
 
 		return $form;
