@@ -461,6 +461,10 @@ class BaseController extends Controller implements BaseControllerInterface
 						}
 					}
 
+					if (isset($properties['empty_data'])) {
+						$options['empty_value'] = $properties['empty_data'];
+					}
+
 					if (isset($properties['multiple'])) {
 						$options['multiple'] = $properties['multiple'];
 					}
@@ -469,6 +473,10 @@ class BaseController extends Controller implements BaseControllerInterface
 
 				case 'entity':
 					$properties['type'] = EntityType::class;
+
+					if (isset($properties['multiple'])) {
+						$options['multiple'] = $properties['multiple'];
+					}
 					break;
 
 				case 'hidden':
