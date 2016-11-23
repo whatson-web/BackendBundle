@@ -363,7 +363,6 @@ class BaseController extends Controller implements BaseControllerInterface
 				$formFieldSlug = $configFormField;
 				$configFormField = explode('.', $configFormField);
 				$configFormField = array_combine($configFormField, $configFormField);
-				dump($configFormField);
 			}
 			if (is_array($configFormField)) {
 				if (!$formFieldSlug) {
