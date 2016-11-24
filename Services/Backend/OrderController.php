@@ -26,7 +26,6 @@ class OrderController extends BaseController implements BaseControllerInterface
 	 */
 	public function __construct(ContainerInterface $container)
 	{
-
 		$this->container = $container;
 	}
 
@@ -39,8 +38,9 @@ class OrderController extends BaseController implements BaseControllerInterface
 	 */
 	public function order($entityPathConfig, Request $request, $arguments = array())
 	{
-
 		$renderVars['entityPathConfig'] = $entityPathConfig;
+
+		$config = $this->getConfig($entityPathConfig, 'order');
 
 		$urlData = $arguments;
 
@@ -54,9 +54,6 @@ class OrderController extends BaseController implements BaseControllerInterface
 
 			$data = $request->request->all();
 
-			$existingLftRgt = array();
-			$orderedEntities = array();
-
 			$entities = $entityRepository->get(
 				'all',
 				array(
@@ -65,24 +62,47 @@ class OrderController extends BaseController implements BaseControllerInterface
 					),
 				)
 			);
-			foreach ($entities as $entity) {
+			$orderedEntities = array();
 
-				$existingLftRgt[] = array(
-					'lft' => $entity->getLft(),
-					'rgt' => $entity->getRgt(),
-				);
-				$orderedEntities[$entity->getId()] = $entity;
-			}
+			switch ($config['sortableType']) {
 
-			foreach ($data['ids'] as $key => $id) {
+				case 'tree':
+					$existingLftRgt = array();
+					foreach ($entities as $entity) {
+						$existingLftRgt[] = array(
+							'lft' => $entity->getLft(),
+							'rgt' => $entity->getRgt(),
+						);
+						$orderedEntities[$entity->getId()] = $entity;
+					}
 
-				$orderedEntity = $orderedEntities[$id];
+					foreach ($data['ids'] as $key => $id) {
+						$orderedEntity = $orderedEntities[$id];
 
-				$orderedEntity->setLft($existingLftRgt[$key]['lft']);
-				$orderedEntity->setRgt($existingLftRgt[$key]['rgt']);
+						$orderedEntity->setLft($existingLftRgt[$key]['lft']);
+						$orderedEntity->setRgt($existingLftRgt[$key]['rgt']);
 
-				$em->persist($orderedEntity);
-				$em->flush();
+						$em->persist($orderedEntity);
+						$em->flush();
+					}
+
+					break;
+
+				case 'field':
+					foreach ($entities as $entity) {
+						$orderedEntities[$entity->getId()] = $entity;
+					}
+
+					foreach ($data['ids'] as $key => $id) {
+						$orderedEntity = $orderedEntities[$id];
+
+						$orderedEntity->{'set' . ucfirst($config['sortableField'])}($key);
+
+						$em->persist($orderedEntity);
+						$em->flush();
+					}
+
+					break;
 			}
 
 			return new JsonResponse(
