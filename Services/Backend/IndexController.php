@@ -191,8 +191,13 @@ class IndexController extends BaseController implements BaseControllerInterface
 			$renderVars['orderUrl'] = $this->getActionUrl($entityPathConfig, 'order', $urlData);
 		}
 
+		$view = '@WHBackendTemplate/BackendTemplate/View/index.html.twig';
+		if (isset($config['view'])) {
+			$view = $config['view'];
+		}
+
 		return $this->container->get('templating')->renderResponse(
-			'@WHBackendTemplate/BackendTemplate/View/index.html.twig',
+			$view,
 			$renderVars
 		);
 	}
