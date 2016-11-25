@@ -171,6 +171,9 @@ class UpdateController extends BaseController implements BaseControllerInterface
 		$view = '@WHBackendTemplate/BackendTemplate/View/update.html.twig';
 		if ($this->modal) {
 			$view = '@WHBackendTemplate/BackendTemplate/View/modal.html.twig';
+			if (isset($config['view'])) {
+				$view = $config['view'];
+			}
 		}
 
 		return $this->container->get('templating')->renderResponse(
