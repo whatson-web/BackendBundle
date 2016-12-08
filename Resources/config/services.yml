@@ -17,3 +17,6 @@ services:
     bk.wh.back.delete_controller:
         class: WH\BackendBundle\Services\Backend\DeleteController
         arguments: ['@service_container']
+    bk.wh.back.translator:
+        class: WH\BackendBundle\Services\Backend\Translator
+        arguments: ['@service_container']
