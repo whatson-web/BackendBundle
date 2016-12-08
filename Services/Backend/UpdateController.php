@@ -30,8 +30,8 @@ class UpdateController extends BaseController implements BaseControllerInterface
 	 */
 	public function __construct(ContainerInterface $container)
 	{
-
 		$this->container = $container;
+		$this->backendTranslator = $this->container->get('bk.wh.back.translator');
 	}
 
 	/**
@@ -43,6 +43,7 @@ class UpdateController extends BaseController implements BaseControllerInterface
 	 */
 	public function update($entityPathConfig, $id, Request $request)
 	{
+		$this->setTranslateDomain($entityPathConfig);
 
 		$em = $this->container->get('doctrine')->getManager();
 
@@ -66,7 +67,7 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
 		$renderVars['globalConfig'] = $globalConfig;
 
-		$renderVars['title'] = $config['title'];
+		$renderVars['title'] = $this->backendTranslator->trans($config['title']);
 
 		$formFields = $this->getFormFields($config['formFields'], $entityPathConfig);
 
@@ -113,7 +114,7 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
 				return new JsonResponse(
 					array(
-						'success' => true,
+						'success'  => true,
 						'redirect' => $redirectUrl,
 					)
 				);

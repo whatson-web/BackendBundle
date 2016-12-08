@@ -9,7 +9,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WH\BackendBundle\Controller\Backend\BaseController;
 use WH\BackendBundle\Controller\Backend\BaseControllerInterface;
-use WH\LibBundle\Utils\Inflector;
 
 /**
  * Class CreateController
@@ -30,8 +29,8 @@ class CreateController extends BaseController implements BaseControllerInterface
 	 */
 	public function __construct(ContainerInterface $container)
 	{
-
 		$this->container = $container;
+		$this->backendTranslator = $this->container->get('bk.wh.back.translator');
 	}
 
 	/**
@@ -43,12 +42,14 @@ class CreateController extends BaseController implements BaseControllerInterface
 	 */
 	public function create($entityPathConfig, Request $request, $arguments = array())
 	{
+		$this->setTranslateDomain($entityPathConfig);
+
 		$config = $this->getConfig($entityPathConfig, 'create');
 		$globalConfig = $this->getGlobalConfig($entityPathConfig);
 
 		$urlData = $arguments;
 
-		$title = $config['title'];
+		$title = $this->backendTranslator->trans($config['title']);
 		$formFields = $this->getFormFields($config['formFields'], $entityPathConfig);
 		$footerFormFields = $config['footerFormFields'];
 

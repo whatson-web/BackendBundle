@@ -30,6 +30,9 @@ class BaseController extends Controller implements BaseControllerInterface
 	public $entity = '';
 	public $type = 'Backend';
 
+	protected $backendTranslator;
+	protected $backendTranslateDomain;
+
 	/**
 	 * @return array
 	 */
@@ -208,6 +211,19 @@ class BaseController extends Controller implements BaseControllerInterface
 	}
 
 	/**
+	 * @param $entityPathConfig
+	 *
+	 * @return bool
+	 */
+	public function setTranslateDomain($entityPathConfig)
+	{
+		$this->backendTranslateDomain = $entityPathConfig['bundlePrefix'] . $entityPathConfig['bundle'] . '_' . $entityPathConfig['type'] . '_' . $entityPathConfig['entity'];
+		$this->backendTranslator->setDomain($this->backendTranslateDomain);
+
+		return true;
+	}
+
+	/**
 	 * @param $config
 	 *
 	 * @return bool
@@ -231,7 +247,7 @@ class BaseController extends Controller implements BaseControllerInterface
 		foreach ($configBreadcrumbs as $configBreadcrumb) {
 			$url = $this->getActionUrl($entityPathConfig, $configBreadcrumb['action'], $data);
 
-			$breadcrumb[$configBreadcrumb['label']] = $url;
+			$breadcrumb[$this->backendTranslator->trans($configBreadcrumb['label'])] = $url;
 		}
 
 		return $breadcrumb;
@@ -401,7 +417,10 @@ class BaseController extends Controller implements BaseControllerInterface
 	{
 		foreach ($formFields as $formField => $properties) {
 			$options = array(
-				'label'    => (!empty($properties['label'])) ? $properties['label'] : false,
+				'label'    => (!empty($properties['label'])) ?
+					$this->backendTranslator->trans($properties['label'])
+					:
+					false,
 				'required' => false,
 			);
 
@@ -435,6 +454,10 @@ class BaseController extends Controller implements BaseControllerInterface
 								}
 								$entityPath .= '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
 								$options['choices'] = $entityPath::$field();
+								foreach ($options['choices'] as $key => $value) {
+									$value = $this->backendTranslator->trans($value);
+									$options['choices'][$key] = $value;
+								}
 								$options['empty_value'] = false;
 								break;
 

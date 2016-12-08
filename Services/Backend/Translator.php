@@ -12,7 +12,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class Translator
 {
 
-	protected $container;
+	private $container;
+	private $domain = 'WHBackendBundle';
 
 	/**
 	 * SearchController constructor.
@@ -22,6 +23,14 @@ class Translator
 	public function __construct(ContainerInterface $container)
 	{
 		$this->container = $container;
+	}
+
+	/**
+	 * @param $domain
+	 */
+	public function setDomain($domain)
+	{
+		$this->domain = $domain;
 	}
 
 	/**
@@ -35,7 +44,7 @@ class Translator
 		return $this->container->get('translator')->trans(
 			$stringToTranslate,
 			$parameters,
-			'wh_backend'
+			$this->domain
 		);
 	}
 }
