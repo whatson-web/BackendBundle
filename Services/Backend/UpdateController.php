@@ -99,7 +99,6 @@ class UpdateController extends BaseController implements BaseControllerInterface
 		$form->handleRequest($request);
 
 		if ($form->isSubmitted()) {
-
 			$data = $form->getData();
 
 			$em->persist($data);

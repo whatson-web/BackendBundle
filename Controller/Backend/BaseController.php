@@ -7,6 +7,7 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -535,6 +536,17 @@ class BaseController extends Controller implements BaseControllerInterface
 
 				case 'form':
 					$properties['type'] = $properties['form'];
+					break;
+
+				case 'collection':
+					$properties['type'] = CollectionType::class;
+					$options['entry_type'] = $properties['form'];
+					$options['allow_add'] = true;
+					$options['allow_delete'] = true;
+					$options['delete_empty'] = true;
+					$options['delete_empty'] = true;
+					$options['by_reference'] = false;
+					$options['attr']['data-form-template'] = $properties['formTemplate'];
 					break;
 
 				case 'sub-form':
