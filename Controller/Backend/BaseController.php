@@ -498,6 +498,9 @@ class BaseController extends Controller implements BaseControllerInterface
 				case 'entity':
 					$properties['type'] = EntityType::class;
 
+					if (isset($properties['choice_label'])) {
+						$options['choice_label'] = $properties['choice_label'];
+					}
 					if (isset($properties['multiple'])) {
 						$options['multiple'] = $properties['multiple'];
 					}
