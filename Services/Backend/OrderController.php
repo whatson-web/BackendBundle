@@ -86,6 +86,9 @@ class OrderController extends BaseController implements BaseControllerInterface
 						$em->flush();
 					}
 
+					$entityRepository->recover();
+					$em->flush();
+
 					break;
 
 				case 'field':
