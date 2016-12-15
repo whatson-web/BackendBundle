@@ -139,6 +139,16 @@ class UpdateController extends BaseController implements BaseControllerInterface
 				);
 			}
 
+			foreach ($config['central']['tabs'] as $tabSlug => $tabProperties) {
+				if (isset($tabProperties['iframeContent'])) {
+					$config['central']['tabs'][$tabSlug]['iframeContent']['url'] = $this->getActionUrl(
+						$entityPathConfig,
+						$tabProperties['iframeContent']['action'],
+						$data
+					);
+				}
+			}
+
 			$renderVars['central'] = $config['central'];
 
 			foreach ($config['column']['panelZones'] as $key => $panelZone) {
