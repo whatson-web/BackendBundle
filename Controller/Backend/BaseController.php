@@ -2,6 +2,7 @@
 
 namespace WH\BackendBundle\Controller\Backend;
 
+use Doctrine\ORM\EntityRepository;
 use FM\ElfinderBundle\Form\Type\ElFinderType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -504,6 +505,27 @@ class BaseController extends Controller implements BaseControllerInterface
 					if (isset($properties['multiple'])) {
 						$options['multiple'] = $properties['multiple'];
 					}
+					if (isset($properties['custom_query_builder'])) {
+						$em = $this->container->get('doctrine')->getManager();
+						$entityRepository = $em->getRepository($properties['class']);
+
+						$conditions = array();
+
+						if (isset($properties['custom_query_builder']['conditions'])) {
+							foreach ($properties['custom_query_builder']['conditions'] as $condition) {
+								$conditions[$condition] = $this->getVariableValue($condition, $form->getData());
+							}
+						}
+
+						$query = $entityRepository->get(
+							'query',
+							array(
+								'conditions' => $conditions,
+							)
+						);
+
+						$options['query_builder'] = $query;
+					}
 					break;
 
 				case 'hidden':
@@ -638,6 +660,36 @@ class BaseController extends Controller implements BaseControllerInterface
 		}
 
 		return $fields;
+	}
+
+	/**
+	 * @param $variable
+	 * @param $data
+	 *
+	 * @return string
+	 */
+	private function getVariableValue($variable, $data)
+	{
+		$value = '';
+		$variableFields = explode('.', $variable);
+
+		foreach ($variableFields as $variableField) {
+			if (!$value) {
+				if (is_object($data)) {
+					$value = $data->{'get' . ucfirst($variableField)}();
+				} else {
+					$value = $data[$variableField];
+				}
+			} else {
+				if (is_object($value)) {
+					$value = $value->{'get' . ucfirst($variableField)}();
+				} else {
+					$value = $value[$variableField];
+				}
+			}
+		}
+
+		return $value;
 	}
 
 }
