@@ -668,7 +668,7 @@ class BaseController extends Controller implements BaseControllerInterface
 	 *
 	 * @return string
 	 */
-	private function getVariableValue($variable, $data)
+	public function getVariableValue($variable, $data)
 	{
 		$value = '';
 		$variableFields = explode('.', $variable);

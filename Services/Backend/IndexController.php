@@ -207,6 +207,30 @@ class IndexController extends BaseController implements BaseControllerInterface
 
 		if ($this->tree) {
 			$renderVars['tree'] = true;
+
+			if (isset($config['treeRootLabel'])) {
+				switch ($config['treeRootLabel']['type']) {
+					case 'entity':
+						$em = $this->get('doctrine')->getManager();
+						$entity = $em->getRepository($config['treeRootLabel']['class'])->get(
+							'one',
+							array(
+								'conditions' => array(
+									$config['treeRootLabel']['dataField'] => $urlData[$config['treeRootLabel']['dataField']],
+								),
+							)
+						);
+
+						if ($entity) {
+							$renderVars['treeRootLabel'] = $this->getVariableValue(
+								$config['treeRootLabel']['field'],
+								$entity
+							);
+						}
+
+						break;
+				}
+			}
 		}
 		if ($this->sortable) {
 			$renderVars['orderUrl'] = $this->getActionUrl($entityPathConfig, 'order', $urlData);
