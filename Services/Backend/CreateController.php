@@ -66,6 +66,10 @@ class CreateController extends BaseController implements BaseControllerInterface
 			}
 			$argumentEntityRepositoryName .= $entityPathConfig['bundle'] . ':' . ucfirst($argument[0]);
 
+			if (isset($globalConfig['repositories'][$argument[0]])) {
+				$argumentEntityRepositoryName = $globalConfig['repositories'][$argument[0]];
+			}
+
 			$argumentValue = $this->container->get('doctrine')->getRepository($argumentEntityRepositoryName)->get(
 				'one',
 				array(
