@@ -505,6 +505,9 @@ class BaseController extends Controller implements BaseControllerInterface
 					if (isset($properties['multiple'])) {
 						$options['multiple'] = $properties['multiple'];
 					}
+					if (isset($properties['group_by'])) {
+						$options['group_by'] = $properties['group_by'];
+					}
 					if (isset($properties['custom_query_builder'])) {
 						$em = $this->container->get('doctrine')->getManager();
 						$entityRepository = $em->getRepository($properties['class']);
