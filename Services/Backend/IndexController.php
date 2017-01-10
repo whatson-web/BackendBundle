@@ -149,10 +149,8 @@ class IndexController extends BaseController implements BaseControllerInterface
 			);
 		}
 
-		if ($this->tree) {
-			foreach ($arguments as $condition => $value) {
-				$conditions[$condition] = $value;
-			}
+		foreach ($arguments as $condition => $value) {
+			$conditions[$condition] = $value;
 		}
 
 		$entityRepository = $this->get('doctrine')->getRepository($this->getRepositoryName($entityPathConfig));
