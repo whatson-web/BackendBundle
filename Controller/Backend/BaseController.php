@@ -501,6 +501,13 @@ class BaseController extends Controller implements BaseControllerInterface
 
 					if (isset($properties['choice_label'])) {
 						$options['choice_label'] = $properties['choice_label'];
+
+						$em = $this->container->get('doctrine')->getManager();
+
+						$entityRepository = $em->getRepository($properties['class']);
+						$query = $entityRepository->get('query');
+
+						$options['query_builder'] = $query;
 					}
 					if (isset($properties['multiple'])) {
 						$options['multiple'] = $properties['multiple'];
