@@ -3,6 +3,7 @@
 namespace WH\BackendBundle\Services\Backend;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WH\BackendBundle\Controller\Backend\BaseController;
@@ -17,11 +18,22 @@ use WH\LibBundle\Utils\Inflector;
 class IndexController extends BaseController implements BaseControllerInterface
 {
 
-	protected $container;
+	public $container;
 
-	private $search = false;
-	private $sortable = false;
-	private $tree = false;
+	public $search = false;
+	public $sortable = false;
+	public $tree = false;
+
+	public $renderVars;
+
+	public $config;
+	public $globalConfig;
+
+	public $entityPathConfig;
+	public $request;
+	public $arguments;
+
+	public $conditions;
 
 	/**
 	 * SearchController constructor.
@@ -45,44 +57,181 @@ class IndexController extends BaseController implements BaseControllerInterface
 	{
 		$this->setTranslateDomain($entityPathConfig);
 
-		$renderVars = array();
-		$conditions = array();
+		$this->entityPathConfig = $entityPathConfig;
+		$this->request = $request;
+		$this->arguments = $arguments;
 
-		$config = $this->getConfig($entityPathConfig, 'index');
-		$globalConfig = $this->getGlobalConfig($entityPathConfig);
+		$this->config = $this->getConfig($entityPathConfig, 'index');
+		$this->globalConfig = $this->getGlobalConfig($entityPathConfig);
+		$this->arguments = $arguments;
 
-		$renderVars['globalConfig'] = $globalConfig;
+		$this->renderVars['globalConfig'] = $this->globalConfig;
 
-		$urlData = $arguments;
+		$this->conditions = array();
 
-		$renderVars['title'] = $this->backendTranslator->trans($config['title']);
+		foreach ($arguments as $condition => $value) {
+			$this->conditions[$condition] = $value;
+		}
 
-		$renderVars['breadcrumb'] = $this->getBreadcrumb(
-			$config['breadcrumb'],
+		if ($this->search) {
+			$this->handleSearchForm();
+		}
+
+		if ($this->tree) {
+			$this->renderVars['tree'] = true;
+
+			if (isset($this->config['treeRootLabel'])) {
+				switch ($this->config['treeRootLabel']['type']) {
+					case 'entity':
+						$em = $this->get('doctrine')->getManager();
+						$entity = $em->getRepository($this->config['treeRootLabel']['class'])->get(
+							'one',
+							array(
+								'conditions' => array(
+									$this->config['treeRootLabel']['dataField'] => $arguments[$this->config['treeRootLabel']['dataField']],
+								),
+							)
+						);
+
+						if ($entity) {
+							$this->renderVars['treeRootLabel'] = $this->getVariableValue(
+								$this->config['treeRootLabel']['field'],
+								$entity
+							);
+						}
+
+						break;
+				}
+			}
+		}
+
+		$this->getTablePanelProperties();
+
+		if ($this->tree) {
+			$this->getEntities();
+		} else {
+			$this->getPagination();
+		}
+
+		if ($this->sortable) {
+			$this->renderVars['orderUrl'] = $this->getActionUrl($entityPathConfig, 'order', $arguments);
+		}
+
+		$this->renderVars['title'] = $this->backendTranslator->trans($this->config['title']);
+
+		$this->renderVars['breadcrumb'] = $this->getBreadcrumb(
+			$this->config['breadcrumb'],
 			$entityPathConfig,
-			$urlData
+			$arguments
 		);
 
-		$tablePanelProperties = $config['tablePanelProperties'];
+		$view = '@WHBackendTemplate/BackendTemplate/View/index.html.twig';
+		if (isset($this->config['view'])) {
+			$view = $this->config['view'];
+		}
+
+		return $this->container->get('templating')->renderResponse(
+			$view,
+			$this->renderVars
+		);
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function validConfig($config)
+	{
+		$this->config = $config;
+
+		if (isset($this->config['search']) && $this->config['search'] == 'true') {
+			$this->validConfigSearch();
+			$this->search = true;
+		}
+
+		if (isset($this->config['tree']) && $this->config['tree'] == 'true') {
+			$this->validConfigTree();
+			$this->tree = true;
+		}
+
+		if (isset($this->config['sortable']) && $this->config['sortable'] == 'true') {
+			$this->sortable = true;
+		}
+
+		if (!isset($this->config['tablePanelProperties'])) {
+			throw new NotFoundHttpException(
+				'Le fichier de configuration ne contient pas le champ "tablePanelProperties"'
+			);
+		}
+
+		if (!isset($this->config['tablePanelProperties']['tableFields'])) {
+			throw new NotFoundHttpException(
+				'Le champ "tableFields" fichier de configuration n\'est pas présent sous "tablePanelProperties"'
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function validConfigSearch()
+	{
+		if (!isset($this->config['formPanelProperties'])) {
+			throw new NotFoundHttpException(
+				'Le fichier de configuration ne contient pas le champ "formPanelProperties"'
+			);
+		}
+
+		if (!isset($this->config['formPanelProperties']['formFields'])) {
+			throw new NotFoundHttpException(
+				'Le champ "formFields" fichier de configuration n\'est pas présent sous "formPanelProperties"'
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function validConfigTree()
+	{
+		return true;
+	}
+
+	/**
+	 * * Gère les propriétés à envoyer à la vue pour l'affichage de la liste des entités dans le tableau
+	 *
+	 * @return bool
+	 */
+	public function getTablePanelProperties()
+	{
+		$tablePanelProperties = $this->config['tablePanelProperties'];
+
 		if ($this->sortable) {
 			$tablePanelProperties['sortable'] = true;
 		}
+
+		// thead
 		if (isset($tablePanelProperties['headerListButtons'])) {
 			foreach ($tablePanelProperties['headerListButtons'] as $key => $headerListButton) {
 				$headerListButton['label'] = $this->backendTranslator->trans($headerListButton['label']);
 				$headerListButton['href'] = $this->getActionUrl(
-					$entityPathConfig,
+					$this->entityPathConfig,
 					$headerListButton['action'],
-					$urlData
+					$this->arguments
 				);
 				$tablePanelProperties['headerListButtons'][$key] = $headerListButton;
 			}
 		}
 
 		$tablePanelProperties['headerLabel'] = $this->backendTranslator->trans($tablePanelProperties['headerLabel']);
+
+		// tbody
 		foreach ($tablePanelProperties['tableFields'] as $entityFieldName => $tableField) {
-			if (!empty($globalConfig['formFields'][$entityFieldName])) {
-				$entityFieldGlobalConfig = $globalConfig['formFields'][$entityFieldName];
+			if (!empty($this->globalConfig['formFields'][$entityFieldName])) {
+				$entityFieldGlobalConfig = $this->globalConfig['formFields'][$entityFieldName];
 				if (!empty($entityFieldGlobalConfig['label'])) {
 					$tableField['label'] = $entityFieldGlobalConfig['label'];
 				}
@@ -104,177 +253,62 @@ class IndexController extends BaseController implements BaseControllerInterface
 		if (isset($tablePanelProperties['tableFields']['buttons'])) {
 			$tablePanelProperties['tableFields']['buttons'] = $this->transformActionIntoRoute(
 				$tablePanelProperties['tableFields']['buttons'],
-				$entityPathConfig
-			);
-		}
-		$renderVars['tablePanelProperties'] = $tablePanelProperties;
-
-		if ($this->search) {
-			$formFields = $config['formPanelProperties']['formFields'];
-			$config['formPanelProperties']['headerLabel'] = $this->backendTranslator->trans(
-				$config['formPanelProperties']['headerLabel']
-			);
-			$renderVars['formPanelProperties'] = $config['formPanelProperties'];
-
-			$form = $this->getForm($formFields);
-
-			$form->handleRequest($request);
-
-			if ($form->isSubmitted()) {
-				$data = $request->request->get($form->getName());
-				$this->container->get('session')->set($this->getSlug($entityPathConfig) . 'search', $data);
-
-				return $this->redirect($this->getActionUrl($entityPathConfig, 'index'));
-			}
-
-			$data = $this->container->get('session')->get($this->getSlug($entityPathConfig) . 'search');
-
-			$form->setData($data);
-
-			$renderVars['formPanelProperties']['form'] = $form->createView();
-			if (isset($renderVars['formPanelProperties']['footerListButtons'])) {
-				foreach ($renderVars['formPanelProperties']['footerListButtons'] as $key => $button) {
-					if (isset($button['label'])) {
-						$renderVars['formPanelProperties']['footerListButtons'][$key]['label'] = $this->backendTranslator->trans(
-							$button['label']
-						);
-					}
-				}
-			}
-
-			$conditions = $this->getConditionsFromData(
-				Inflector::camelize($entityPathConfig['entity']),
-				$formFields,
-				$data
+				$this->entityPathConfig
 			);
 		}
 
-		foreach ($arguments as $condition => $value) {
-			$conditions[$condition] = $value;
-		}
+		$this->renderVars['tablePanelProperties'] = $tablePanelProperties;
 
-		$entityRepository = $this->get('doctrine')->getRepository($this->getRepositoryName($entityPathConfig));
+		return true;
+	}
 
-		if ($this->tree) {
-			$entities = $entityRepository->get(
-				'all',
-				array(
-					'conditions' => $conditions,
-				)
-			);
-			$renderVars['tablePanelProperties']['entities'] = $entities;
+	/**
+	 * @return bool
+	 */
+	public function handleSearchForm()
+	{
+		$formFields = $this->config['formPanelProperties']['formFields'];
 
-			$renderVars['entityPathConfig'] = $entityPathConfig;
+		$form = $this->getForm($formFields);
 
-			$renderVars['urlData'] = $urlData;
-			$renderVars['orderUrl'] = $this->getActionUrl($entityPathConfig, 'order', $urlData);
-		} else {
+		$this->handleSearchFormSubmission($form);
 
-			$paginationPage = 1;
-			if ($request->query->get('page')) {
-				$paginationPage = $request->query->get('page');
-			}
+		// Data initialisation
+		$data = $this->container->get('session')->get($this->getSlug($this->entityPathConfig) . 'search');
+		$form->setData($data);
 
-			$paginationLimit = 25;
-
-			$entities = $entityRepository->get(
-				'paginate',
-				array(
-					'paginate'   => array(
-						'page'  => $paginationPage,
-						'limit' => $paginationLimit,
-					),
-					'conditions' => $conditions,
-				)
-			);
-			$renderVars['tablePanelProperties']['entities'] = $entities;
-
-			$pagination = $entityRepository->get(
-				'pagination',
-				array(
-					'paginate'   => array(
-						'page'  => $paginationPage,
-						'limit' => $paginationLimit,
-					),
-					'conditions' => $conditions,
-				)
-			);
-			$pagination['url'] = $this->getActionUrl($entityPathConfig, 'index', $urlData);
-			$renderVars['pagination'] = $pagination;
-		}
-
-		if ($this->tree) {
-			$renderVars['tree'] = true;
-
-			if (isset($config['treeRootLabel'])) {
-				switch ($config['treeRootLabel']['type']) {
-					case 'entity':
-						$em = $this->get('doctrine')->getManager();
-						$entity = $em->getRepository($config['treeRootLabel']['class'])->get(
-							'one',
-							array(
-								'conditions' => array(
-									$config['treeRootLabel']['dataField'] => $urlData[$config['treeRootLabel']['dataField']],
-								),
-							)
-						);
-
-						if ($entity) {
-							$renderVars['treeRootLabel'] = $this->getVariableValue(
-								$config['treeRootLabel']['field'],
-								$entity
-							);
-						}
-
-						break;
-				}
-			}
-		}
-		if ($this->sortable) {
-			$renderVars['orderUrl'] = $this->getActionUrl($entityPathConfig, 'order', $urlData);
-		}
-
-		$view = '@WHBackendTemplate/BackendTemplate/View/index.html.twig';
-		if (isset($config['view'])) {
-			$view = $config['view'];
-		}
-
-		return $this->container->get('templating')->renderResponse(
-			$view,
-			$renderVars
+		// Get conditions from data
+		$conditions = $this->getConditionsFromData(
+			Inflector::camelize($this->entityPathConfig['entity']),
+			$formFields,
+			$data
 		);
+		$this->conditions = array_merge(
+			$this->conditions,
+			$conditions
+		);
+
+		// Variables pour l'affichage du formulaire dans la vue
+		$this->getSearchFormViewVariables($form);
+
+		return true;
 	}
 
 	/**
-	 * @param $config
+	 * @param Form $form
 	 *
-	 * @return bool
+	 * @return bool|\Symfony\Component\HttpFoundation\RedirectResponse
 	 */
-	public function validConfig($config)
+	public function handleSearchFormSubmission(Form $form)
 	{
-		if (isset($config['search']) && $config['search'] == 'true') {
-			$this->validConfigSearch($config);
-			$this->search = true;
-		}
+		$form->handleRequest($this->request);
 
-		if (isset($config['tree']) && $config['tree'] == 'true') {
-			$this->validConfigTree($config);
-			$this->tree = true;
-		}
+		if ($form->isSubmitted()) {
+			$data = $this->request->request->get($form->getName());
+			$this->container->get('session')->set($this->getSlug($this->entityPathConfig) . 'search', $data);
 
-		if (isset($config['sortable']) && $config['sortable'] == 'true') {
-			$this->sortable = true;
-		}
-
-		if (!isset($config['tablePanelProperties'])) {
-			throw new NotFoundHttpException(
-				'Le fichier de configuration ne contient pas le champ "tablePanelProperties"'
-			);
-		}
-
-		if (!isset($config['tablePanelProperties']['tableFields'])) {
-			throw new NotFoundHttpException(
-				'Le champ "tableFields" fichier de configuration n\'est pas présent sous "tablePanelProperties"'
+			return $this->redirect(
+				$this->getActionUrl($this->entityPathConfig, 'index')
 			);
 		}
 
@@ -282,34 +316,102 @@ class IndexController extends BaseController implements BaseControllerInterface
 	}
 
 	/**
-	 * @param $config
+	 * @param Form $form
 	 *
 	 * @return bool
 	 */
-	public function validConfigSearch($config)
+	public function getSearchFormViewVariables(Form $form)
 	{
-		if (!isset($config['formPanelProperties'])) {
-			throw new NotFoundHttpException(
-				'Le fichier de configuration ne contient pas le champ "formPanelProperties"'
-			);
-		}
+		$this->renderVars['formPanelProperties']['form'] = $form->createView();
 
-		if (!isset($config['formPanelProperties']['formFields'])) {
-			throw new NotFoundHttpException(
-				'Le champ "formFields" fichier de configuration n\'est pas présent sous "formPanelProperties"'
-			);
+		$this->config['formPanelProperties']['headerLabel'] = $this->backendTranslator->trans(
+			$this->config['formPanelProperties']['headerLabel']
+		);
+		$this->renderVars['formPanelProperties'] = $this->config['formPanelProperties'];
+
+		if (isset($this->renderVars['formPanelProperties']['footerListButtons'])) {
+			foreach ($this->renderVars['formPanelProperties']['footerListButtons'] as $key => $button) {
+				if (isset($button['label'])) {
+					$this->renderVars['formPanelProperties']['footerListButtons'][$key]['label'] = $this->backendTranslator->trans(
+						$button['label']
+					);
+				}
+			}
 		}
 
 		return true;
 	}
 
 	/**
-	 * @param $config
+	 * Gère la liste des entités lorsqu'il n'y a pas de pagination
 	 *
 	 * @return bool
 	 */
-	public function validConfigTree($config)
+	public function getEntities()
 	{
+		$entityRepository = $this->get('doctrine')->getRepository(
+			$this->getRepositoryName($this->entityPathConfig)
+		);
+
+		$entities = $entityRepository->get(
+			'all',
+			array(
+				'conditions' => $this->conditions,
+			)
+		);
+		$this->renderVars['tablePanelProperties']['entities'] = $entities;
+
+		$this->renderVars['entityPathConfig'] = $this->entityPathConfig;
+
+		$this->renderVars['urlData'] = $this->arguments;
+		$this->renderVars['orderUrl'] = $this->getActionUrl($this->entityPathConfig, 'order', $this->arguments);
+
+		return true;
+	}
+
+	/**
+	 * Gère la pagination
+	 *
+	 * @return bool
+	 */
+	public function getPagination()
+	{
+		$entityRepository = $this->get('doctrine')->getRepository(
+			$this->getRepositoryName($this->entityPathConfig)
+		);
+
+		$paginationPage = 1;
+		if ($this->request->query->get('page')) {
+			$paginationPage = $this->request->query->get('page');
+		}
+
+		$paginationLimit = 25;
+
+		$entities = $entityRepository->get(
+			'paginate',
+			array(
+				'paginate'   => array(
+					'page'  => $paginationPage,
+					'limit' => $paginationLimit,
+				),
+				'conditions' => $this->conditions,
+			)
+		);
+		$this->renderVars['tablePanelProperties']['entities'] = $entities;
+
+		$pagination = $entityRepository->get(
+			'pagination',
+			array(
+				'paginate'   => array(
+					'page'  => $paginationPage,
+					'limit' => $paginationLimit,
+				),
+				'conditions' => $this->conditions,
+			)
+		);
+		$pagination['url'] = $this->getActionUrl($this->entityPathConfig, 'index', $this->arguments);
+		$this->renderVars['pagination'] = $pagination;
+
 		return true;
 	}
 
