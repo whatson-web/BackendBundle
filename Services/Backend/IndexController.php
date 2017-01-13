@@ -322,12 +322,12 @@ class IndexController extends BaseController implements BaseControllerInterface
 	 */
 	public function getSearchFormViewVariables(Form $form)
 	{
-		$this->renderVars['formPanelProperties']['form'] = $form->createView();
-
 		$this->config['formPanelProperties']['headerLabel'] = $this->backendTranslator->trans(
 			$this->config['formPanelProperties']['headerLabel']
 		);
 		$this->renderVars['formPanelProperties'] = $this->config['formPanelProperties'];
+
+		$this->renderVars['formPanelProperties']['form'] = $form->createView();
 
 		if (isset($this->renderVars['formPanelProperties']['footerListButtons'])) {
 			foreach ($this->renderVars['formPanelProperties']['footerListButtons'] as $key => $button) {
