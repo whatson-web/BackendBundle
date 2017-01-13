@@ -130,6 +130,10 @@ class IndexController extends BaseController implements BaseControllerInterface
 			$view = $this->config['view'];
 		}
 
+		if (isset($this->config['layout'])) {
+			$this->renderVars['layout'] = $this->config['layout'];
+		}
+
 		return $this->container->get('templating')->renderResponse(
 			$view,
 			$this->renderVars

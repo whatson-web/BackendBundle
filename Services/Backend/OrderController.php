@@ -99,7 +99,7 @@ class OrderController extends BaseController implements BaseControllerInterface
 					foreach ($data['ids'] as $key => $id) {
 						$orderedEntity = $orderedEntities[$id];
 
-						$orderedEntity->{'set' . ucfirst($config['sortableField'])}($key);
+						$orderedEntity->{'set' . ucfirst($config['sortableField'])}(sizeof($data['ids']) - $key);
 
 						$em->persist($orderedEntity);
 						$em->flush();
