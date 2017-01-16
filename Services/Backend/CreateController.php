@@ -70,7 +70,7 @@ class CreateController extends BaseController implements BaseControllerInterface
 		$form->handleRequest($request);
 
 		if ($form->isSubmitted()) {
-			$this->handleFormSubmission($form);
+			return $this->handleFormSubmission($form);
 		}
 
 		$this->renderVars['title'] = $this->backendTranslator->trans($this->config['title']);
