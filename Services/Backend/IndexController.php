@@ -74,7 +74,10 @@ class IndexController extends BaseController implements BaseControllerInterface
 		}
 
 		if ($this->search) {
-			$this->handleSearchForm();
+			$return = $this->handleSearchForm();
+			if ($this->request->getMethod() == 'POST') {
+				return $return;
+			}
 		}
 
 		if ($this->tree) {
@@ -275,7 +278,9 @@ class IndexController extends BaseController implements BaseControllerInterface
 
 		$form = $this->getForm($formFields);
 
-		$this->handleSearchFormSubmission($form);
+		if ($this->request->getMethod() == 'POST') {
+			return $this->handleSearchFormSubmission($form);
+		}
 
 		// Data initialisation
 		$data = $this->container->get('session')->get($this->getSlug($this->entityPathConfig) . 'search');

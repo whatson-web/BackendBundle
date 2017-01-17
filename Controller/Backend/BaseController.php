@@ -522,8 +522,13 @@ class BaseController extends Controller implements BaseControllerInterface
 						$conditions = array();
 
 						if (isset($properties['custom_query_builder']['conditions'])) {
-							foreach ($properties['custom_query_builder']['conditions'] as $condition) {
-								$conditions[$condition] = $this->getVariableValue($condition, $form->getData());
+							foreach ($properties['custom_query_builder']['conditions'] as $condition => $conditionValue) {
+								if (is_int($condition)) {
+									$condition = $conditionValue;
+									$conditions[$condition] = $this->getVariableValue($condition, $form->getData());
+								} else {
+									$conditions[$condition] = $conditionValue;
+								}
 							}
 						}
 
