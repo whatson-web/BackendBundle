@@ -4,6 +4,7 @@ namespace WH\BackendBundle\Services\Backend;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -18,9 +19,18 @@ use WH\BackendBundle\Controller\Backend\BaseControllerInterface;
 class CreateController extends BaseController implements BaseControllerInterface
 {
 
-	protected $container;
+	public $container;
 
-	private $modal = false;
+	public $modal = false;
+
+	public $renderVars;
+
+	public $config;
+	public $globalConfig;
+
+	public $entityPathConfig;
+	public $request;
+	public $arguments;
 
 	/**
 	 * SearchController constructor.
@@ -44,99 +54,26 @@ class CreateController extends BaseController implements BaseControllerInterface
 	{
 		$this->setTranslateDomain($entityPathConfig);
 
-		$config = $this->getConfig($entityPathConfig, 'create');
-		$globalConfig = $this->getGlobalConfig($entityPathConfig);
+		$this->entityPathConfig = $entityPathConfig;
+		$this->request = $request;
+		$this->arguments = $arguments;
 
-		$urlData = $arguments;
+		$this->renderVars = array();
 
-		$title = $this->backendTranslator->trans($config['title']);
-		$formFields = $this->getFormFields($config['formFields'], $entityPathConfig);
-		$footerFormFields = $config['footerFormFields'];
+		$this->config = $this->getConfig($entityPathConfig, 'create');
+		$this->globalConfig = $this->getGlobalConfig($entityPathConfig);
 
-		$entityClass = new \ReflectionClass($this->getEntityPath($entityPathConfig));
-		$data = $entityClass->newInstanceArgs();
+		$this->renderVars['globalConfig'] = $this->globalConfig;
 
-		foreach ($arguments as $argument => $value) {
-
-			$argument = explode('.', $argument);
-
-			$argumentEntityRepositoryName = '';
-			if ($entityPathConfig['bundlePrefix'] != '') {
-				$argumentEntityRepositoryName .= $entityPathConfig['bundlePrefix'];
-			}
-			$argumentEntityRepositoryName .= $entityPathConfig['bundle'] . ':' . ucfirst($argument[0]);
-
-			if (isset($globalConfig['repositories'][$argument[0]])) {
-				$argumentEntityRepositoryName = $globalConfig['repositories'][$argument[0]];
-			}
-
-			$argumentValue = $this->container->get('doctrine')->getRepository($argumentEntityRepositoryName)->get(
-				'one',
-				array(
-					'conditions' => array(
-						$argument[0] . '.' . $argument[1] => $value,
-					),
-				)
-			);
-			$data->{'set' . ucfirst($argument[0])}($argumentValue);
-		}
-
-		$form = $this->getEntityForm($formFields, $entityPathConfig, $data);
-
-		if (isset($footerFormFields['create'])) {
-
-			$form->add(
-				'create',
-				SubmitType::class,
-				array(
-					'label' => 'Créer',
-				)
-			);
-		}
-
-		if (isset($footerFormFields['createEdit'])) {
-
-			$form->add(
-				'createEdit',
-				SubmitType::class,
-				array(
-					'label' => 'Créer & Editer',
-				)
-			);
-		}
+		$form = $this->getCreateForm();
 
 		$form->handleRequest($request);
 
 		if ($form->isSubmitted()) {
-
-			$data = $form->getData();
-
-			$em = $this->container->get('doctrine')->getManager();
-
-			$em->persist($data);
-			$em->flush();
-
-			if (isset($config['redirectionAction'])) {
-				$redirectUrl = $this->getActionUrl($entityPathConfig, $config['redirectionAction'], $data, true);
-			} else {
-				$redirectUrl = $this->getActionUrl($entityPathConfig, 'index', $data, true);
-				if ($request->query->get('submitButton') && $request->query->get('submitButton') == 'createEdit') {
-					$redirectUrl = $this->getActionUrl($entityPathConfig, 'update', $data, true);
-				}
-			}
-
-			if ($request->isXmlHttpRequest()) {
-
-				return new JsonResponse(
-					array(
-						'success'  => true,
-						'redirect' => $redirectUrl,
-					)
-				);
-			}
-
-			return $this->redirect($redirectUrl);
+			return $this->handleFormSubmission($form);
 		}
+
+		$this->renderVars['title'] = $this->backendTranslator->trans($this->config['title']);
 
 		$view = '@WHBackendTemplate/BackendTemplate/View/modal.html.twig';
 		if (isset($config['view'])) {
@@ -145,14 +82,7 @@ class CreateController extends BaseController implements BaseControllerInterface
 
 		return $this->container->get('templating')->renderResponse(
 			$view,
-			array(
-				'globalConfig'     => $globalConfig,
-				'title'            => $title,
-				'form'             => $form->createView(),
-				'formAction'       => $this->getActionUrl($entityPathConfig, 'create', $urlData),
-				'formFields'       => $formFields,
-				'footerFormFields' => $footerFormFields,
-			)
+			$this->renderVars
 		);
 	}
 
@@ -180,4 +110,134 @@ class CreateController extends BaseController implements BaseControllerInterface
 
 		return true;
 	}
+
+	/**
+	 * @return mixed|\Symfony\Component\Form\FormInterface
+	 */
+	public function getCreateForm()
+	{
+		$formFields = $this->getFormFields($this->config['formFields'], $this->entityPathConfig);
+		$footerFormFields = $this->config['footerFormFields'];
+
+		$form = $this->getEntityForm($formFields, $this->entityPathConfig, $this->getData());
+
+		if (isset($footerFormFields['create'])) {
+			$form->add(
+				'create',
+				SubmitType::class,
+				array(
+					'label' => 'Créer',
+				)
+			);
+		}
+
+		if (isset($footerFormFields['createEdit'])) {
+			$form->add(
+				'createEdit',
+				SubmitType::class,
+				array(
+					'label' => 'Créer & Editer',
+				)
+			);
+		}
+
+		$this->renderVars['form'] = $form->createView();
+		$this->renderVars['formAction'] = $this->getActionUrl($this->entityPathConfig, 'create', $this->arguments);
+		$this->renderVars['formFields'] = $formFields;
+		$this->renderVars['footerFormFields'] = $footerFormFields;
+
+		return $form;
+	}
+
+	/**
+	 * @return object
+	 */
+	public function getData()
+	{
+		$entityClass = new \ReflectionClass($this->getEntityPath($this->entityPathConfig));
+		$data = $entityClass->newInstanceArgs();
+
+		foreach ($this->arguments as $argument => $value) {
+			$argument = explode('.', $argument);
+
+			$argumentEntityRepositoryName = '';
+			if ($this->entityPathConfig['bundlePrefix'] != '') {
+				$argumentEntityRepositoryName .= $this->entityPathConfig['bundlePrefix'];
+			}
+			$argumentEntityRepositoryName .= $this->entityPathConfig['bundle'] . ':' . ucfirst($argument[0]);
+
+			if (isset($globalConfig['repositories'][$argument[0]])) {
+				$argumentEntityRepositoryName = $globalConfig['repositories'][$argument[0]];
+			}
+
+			$argumentValue = $this->container->get('doctrine')->getRepository($argumentEntityRepositoryName)->get(
+				'one',
+				array(
+					'conditions' => array(
+						$argument[0] . '.' . $argument[1] => $value,
+					),
+				)
+			);
+			$data->{'set' . ucfirst($argument[0])}($argumentValue);
+		}
+
+		return $data;
+	}
+
+	/**
+	 * @param Form $form
+	 *
+	 * @return JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+	 */
+	public function handleFormSubmission(Form $form)
+	{
+		$data = $form->getData();
+		$this->saveEntity($data);
+
+		return $this->redirectAfterSave($data);
+	}
+
+	/**
+	 * @param $data
+	 */
+	public function saveEntity($data)
+	{
+		$em = $this->container->get('doctrine')->getManager();
+
+		$em->persist($data);
+		$em->flush();
+	}
+
+	/**
+	 * @param $data
+	 *
+	 * @return JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+	 */
+	public function redirectAfterSave($data)
+	{
+		if (isset($config['redirectionAction'])) {
+			$redirectUrl = $this->getActionUrl($this->entityPathConfig, $config['redirectionAction'], $data, true);
+		} else {
+			$redirectUrl = $this->getActionUrl($this->entityPathConfig, 'index', $data, true);
+			if ($this->request->query->get('submitButton') && $this->request->query->get(
+					'submitButton'
+				) == 'createEdit'
+			) {
+				$redirectUrl = $this->getActionUrl($this->entityPathConfig, 'update', $data, true);
+			}
+		}
+
+		if ($this->request->isXmlHttpRequest()) {
+
+			return new JsonResponse(
+				array(
+					'success'  => true,
+					'redirect' => $redirectUrl,
+				)
+			);
+		}
+
+		return $this->redirect($redirectUrl);
+	}
+
 }
