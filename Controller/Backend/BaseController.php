@@ -579,6 +579,9 @@ class BaseController extends Controller implements BaseControllerInterface
                     $options['delete_empty'] = true;
                     $options['by_reference'] = false;
                     $options['attr']['data-form-template'] = $properties['formTemplate'];
+                    if (isset($properties['formTemplateHead'])) {
+                        $options['attr']['data-form-template-head'] = $properties['formTemplateHead'];
+                    }
                     break;
 
                 case 'sub-form':
