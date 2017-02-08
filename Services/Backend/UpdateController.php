@@ -175,6 +175,20 @@ class UpdateController extends BaseController implements BaseControllerInterface
                 }
             }
 
+            if ($formField->children) {
+                foreach ($formField->children as $childFormSlug => $childFormField) {
+                    if (isset($childFormField->vars['label'])) {
+                        $childFormField->vars['label'] = $backendTranslator->trans($childFormField->vars['label']);
+                    }
+
+                    if (isset($childFormField->vars['choices'])) {
+                        foreach ($childFormField->vars['choices'] as $key => $choice) {
+                            $childFormField->vars['choices'][$key]->label = $backendTranslator->trans($choice->label);
+                        }
+                    }
+                }
+            }
+
             $renderVars['form']->children[$formSlug] = $formField;
         }
 
