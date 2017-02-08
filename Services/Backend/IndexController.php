@@ -43,7 +43,6 @@ class IndexController extends BaseController implements BaseControllerInterface
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->backendTranslator = $this->container->get('bk.wh.back.translator');
     }
 
     /**
@@ -55,8 +54,6 @@ class IndexController extends BaseController implements BaseControllerInterface
      */
     public function index($entityPathConfig, Request $request, $arguments = array())
     {
-        $this->setTranslateDomain($entityPathConfig);
-
         $this->entityPathConfig = $entityPathConfig;
         $this->request = $request;
         $this->arguments = $arguments;
@@ -120,7 +117,7 @@ class IndexController extends BaseController implements BaseControllerInterface
             $this->renderVars['orderUrl'] = $this->getActionUrl($entityPathConfig, 'order', $arguments);
         }
 
-        $this->renderVars['title'] = $this->backendTranslator->trans($this->config['title']);
+        $this->renderVars['title'] = $this->config['title'];
 
         $this->renderVars['breadcrumb'] = $this->getBreadcrumb(
             $this->config['breadcrumb'],
@@ -136,6 +133,8 @@ class IndexController extends BaseController implements BaseControllerInterface
         if (isset($this->config['layout'])) {
             $this->renderVars['layout'] = $this->config['layout'];
         }
+
+        $this->renderVars = $this->translateRenderVars($entityPathConfig, $this->renderVars);
 
         return $this->container->get('templating')->renderResponse(
             $view,
@@ -223,7 +222,6 @@ class IndexController extends BaseController implements BaseControllerInterface
         // thead
         if (isset($tablePanelProperties['headerListButtons'])) {
             foreach ($tablePanelProperties['headerListButtons'] as $key => $headerListButton) {
-                $headerListButton['label'] = $this->backendTranslator->trans($headerListButton['label']);
                 $headerListButton['href'] = $this->getActionUrl(
                     $this->entityPathConfig,
                     $headerListButton['action'],
@@ -233,8 +231,6 @@ class IndexController extends BaseController implements BaseControllerInterface
             }
         }
 
-        $tablePanelProperties['headerLabel'] = $this->backendTranslator->trans($tablePanelProperties['headerLabel']);
-
         // tbody
         foreach ($tablePanelProperties['tableFields'] as $entityFieldName => $tableField) {
             if (!empty($this->globalConfig['formFields'][$entityFieldName])) {
@@ -243,14 +239,8 @@ class IndexController extends BaseController implements BaseControllerInterface
                     $tableField['label'] = $entityFieldGlobalConfig['label'];
                 }
             }
-            if (isset($tableField['label'])) {
-                $tableField['label'] = $this->backendTranslator->trans($tableField['label']);
-            }
             if (is_array($tableField) && key_exists('multipleFields', $tableField)) {
                 foreach ($tableField as $key => $multipleField) {
-                    if (isset($multipleField['confirm'])) {
-                        $multipleField['confirm'] = $this->backendTranslator->trans($multipleField['confirm']);
-                    }
                     $tableField[$key] = $multipleField;
                 }
             }
@@ -371,22 +361,9 @@ class IndexController extends BaseController implements BaseControllerInterface
      */
     public function getSearchFormViewVariables(Form $form)
     {
-        $this->config['formPanelProperties']['headerLabel'] = $this->backendTranslator->trans(
-            $this->config['formPanelProperties']['headerLabel']
-        );
         $this->renderVars['formPanelProperties'] = $this->config['formPanelProperties'];
 
         $this->renderVars['formPanelProperties']['form'] = $form->createView();
-
-        if (isset($this->renderVars['formPanelProperties']['footerListButtons'])) {
-            foreach ($this->renderVars['formPanelProperties']['footerListButtons'] as $key => $button) {
-                if (isset($button['label'])) {
-                    $this->renderVars['formPanelProperties']['footerListButtons'][$key]['label'] = $this->backendTranslator->trans(
-                        $button['label']
-                    );
-                }
-            }
-        }
 
         return true;
     }
@@ -529,5 +506,75 @@ class IndexController extends BaseController implements BaseControllerInterface
         }
 
         return $conditions;
+    }
+
+    /**
+     * @param $entityPathConfig
+     * @param $renderVars
+     *
+     * @return mixed
+     */
+    public function translateRenderVars($entityPathConfig, $renderVars)
+    {
+        $backendTranslator = $this->container->get('bk.wh.back.translator');
+        $backendTranslator->setDomain($this->getTranslateDomain($entityPathConfig));
+
+        $renderVars['title'] = $backendTranslator->trans($renderVars['title']);
+
+        $breadcrumb = array();
+        foreach ($renderVars['breadcrumb'] as $name => $url) {
+            $breadcrumb[$backendTranslator->trans($name)] = $url;
+        }
+        $renderVars['breadcrumb'] = $breadcrumb;
+
+        $renderVars['tablePanelProperties']['headerLabel'] = $backendTranslator->trans(
+            $renderVars['tablePanelProperties']['headerLabel']
+        );
+
+        if (isset($renderVars['tablePanelProperties']['headerListButtons'])) {
+            foreach ($renderVars['tablePanelProperties']['headerListButtons'] as $key => $headerListButton) {
+                $headerListButton['label'] = $backendTranslator->trans($headerListButton['label']);
+                $renderVars['tablePanelProperties']['headerListButtons'][$key] = $headerListButton;
+            }
+        }
+
+        foreach ($renderVars['tablePanelProperties']['tableFields'] as $entityFieldName => $tableField) {
+            if (isset($tableField['label'])) {
+                $tableField['label'] = $backendTranslator->trans($tableField['label']);
+            }
+
+            if (is_array($tableField) && key_exists('multipleFields', $tableField)) {
+                foreach ($tableField as $key => $multipleField) {
+                    if (isset($multipleField['confirm'])) {
+                        $multipleField['confirm'] = $backendTranslator->trans($multipleField['confirm']);
+                    }
+                    $tableField[$key] = $multipleField;
+                }
+            }
+
+            $renderVars['tablePanelProperties']['tableFields'][$entityFieldName] = $tableField;
+        }
+
+        if ($this->search) {
+            $renderVars['formPanelProperties']['headerLabel'] = $backendTranslator->trans(
+                $renderVars['formPanelProperties']['headerLabel']
+            );
+
+            foreach ($renderVars['formPanelProperties']['form']->children as $formFieldSlug => $formField) {
+                $formField->vars['label'] = $backendTranslator->trans($formField->vars['label']);
+                $renderVars['formPanelProperties']['form']->children[$formFieldSlug] = $formField;
+            }
+
+            if (isset($renderVars['formPanelProperties']['footerListButtons'])) {
+                foreach ($renderVars['formPanelProperties']['footerListButtons'] as $key => $button) {
+                    if (isset($button['label'])) {
+                        $button['label'] = $backendTranslator->trans($button['label']);
+                    }
+                    $renderVars['formPanelProperties']['footerListButtons'][$key] = $button;
+                }
+            }
+        }
+
+        return $renderVars;
     }
 }

@@ -15,43 +15,41 @@ use WH\LibBundle\Utils\Inflector;
 class DeleteController extends BaseController implements BaseControllerInterface
 {
 
-	protected $container;
+    protected $container;
 
-	/**
-	 * SearchController constructor.
-	 *
-	 * @param ContainerInterface $container
-	 */
-	public function __construct(ContainerInterface $container)
-	{
+    /**
+     * SearchController constructor.
+     *
+     * @param ContainerInterface $container
+     */
+    public function __construct(ContainerInterface $container)
+    {
+        $this->container = $container;
+    }
 
-		$this->container = $container;
-	}
+    /**
+     * @param         $entityPathConfig
+     * @param         $id
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
+     */
+    public function delete($entityPathConfig, $id)
+    {
+        $em = $this->container->get('doctrine')->getManager();
 
-	/**
-	 * @param         $entityPathConfig
-	 * @param         $id
-	 *
-	 * @return \Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
-	 */
-	public function delete($entityPathConfig, $id)
-	{
+        $data = $em->getRepository($this->getRepositoryName($entityPathConfig))->get(
+            'one',
+            array(
+                'conditions' => array(
+                    Inflector::camelize($entityPathConfig['entity']) . '.id' => $id,
+                ),
+            )
+        );
 
-		$em = $this->container->get('doctrine')->getManager();
+        $em->remove($data);
+        $em->flush();
 
-		$data = $em->getRepository($this->getRepositoryName($entityPathConfig))->get(
-			'one',
-			array(
-				'conditions' => array(
-					Inflector::camelize($entityPathConfig['entity']) . '.id' => $id,
-				),
-			)
-		);
-
-		$em->remove($data);
-		$em->flush();
-
-		return $this->redirect($this->getActionUrl($entityPathConfig, 'index', $data));
-	}
+        return $this->redirect($this->getActionUrl($entityPathConfig, 'index', $data));
+    }
 
 }

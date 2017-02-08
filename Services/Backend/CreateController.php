@@ -19,225 +19,256 @@ use WH\BackendBundle\Controller\Backend\BaseControllerInterface;
 class CreateController extends BaseController implements BaseControllerInterface
 {
 
-	public $container;
+    public $container;
 
-	public $modal = false;
+    public $modal = false;
 
-	public $renderVars;
+    public $renderVars;
 
-	public $config;
-	public $globalConfig;
+    public $config;
+    public $globalConfig;
 
-	public $entityPathConfig;
-	public $request;
-	public $arguments;
+    public $entityPathConfig;
+    public $request;
+    public $arguments;
 
-	/**
-	 * SearchController constructor.
-	 *
-	 * @param ContainerInterface $container
-	 */
-	public function __construct(ContainerInterface $container)
-	{
-		$this->container = $container;
-		$this->backendTranslator = $this->container->get('bk.wh.back.translator');
-	}
+    /**
+     * SearchController constructor.
+     *
+     * @param ContainerInterface $container
+     */
+    public function __construct(ContainerInterface $container)
+    {
+        $this->container = $container;
+    }
 
-	/**
-	 * @param         $entityPathConfig
-	 * @param Request $request
-	 * @param array   $arguments
-	 *
-	 * @return \Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
-	 */
-	public function create($entityPathConfig, Request $request, $arguments = array())
-	{
-		$this->setTranslateDomain($entityPathConfig);
+    /**
+     * @param         $entityPathConfig
+     * @param Request $request
+     * @param array   $arguments
+     *
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
+     */
+    public function create($entityPathConfig, Request $request, $arguments = array())
+    {
+        $this->entityPathConfig = $entityPathConfig;
+        $this->request = $request;
+        $this->arguments = $arguments;
 
-		$this->entityPathConfig = $entityPathConfig;
-		$this->request = $request;
-		$this->arguments = $arguments;
+        $this->renderVars = array();
 
-		$this->renderVars = array();
+        $this->config = $this->getConfig($entityPathConfig, 'create');
+        $this->globalConfig = $this->getGlobalConfig($entityPathConfig);
 
-		$this->config = $this->getConfig($entityPathConfig, 'create');
-		$this->globalConfig = $this->getGlobalConfig($entityPathConfig);
+        $this->renderVars['globalConfig'] = $this->globalConfig;
 
-		$this->renderVars['globalConfig'] = $this->globalConfig;
+        $form = $this->getCreateForm();
 
-		$form = $this->getCreateForm();
+        $form->handleRequest($request);
 
-		$form->handleRequest($request);
+        if ($form->isSubmitted()) {
+            return $this->handleFormSubmission($form);
+        }
 
-		if ($form->isSubmitted()) {
-			return $this->handleFormSubmission($form);
-		}
+        $this->renderVars['title'] = $this->config['title'];
 
-		$this->renderVars['title'] = $this->backendTranslator->trans($this->config['title']);
+        $view = '@WHBackendTemplate/BackendTemplate/View/modal.html.twig';
+        if (isset($config['view'])) {
+            $view = $config['view'];
+        }
 
-		$view = '@WHBackendTemplate/BackendTemplate/View/modal.html.twig';
-		if (isset($config['view'])) {
-			$view = $config['view'];
-		}
+        $this->renderVars = $this->translateRenderVars($entityPathConfig, $this->renderVars);
 
-		return $this->container->get('templating')->renderResponse(
-			$view,
-			$this->renderVars
-		);
-	}
+        return $this->container->get('templating')->renderResponse(
+            $view,
+            $this->renderVars
+        );
+    }
 
-	/**
-	 * @param $config
-	 *
-	 * @return bool
-	 */
-	public function validConfig($config)
-	{
+    /**
+     * @param $config
+     *
+     * @return bool
+     */
+    public function validConfig($config)
+    {
+        if (!isset($config['title'])) {
+            throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "title"');
+        }
 
-		if (!isset($config['title'])) {
+        if (!isset($config['formFields'])) {
+            throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "formFields"');
+        }
 
-			throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "title"');
-		}
+        if (isset($config['modal']) && $config['modal'] == 'false') {
+            $this->modal = false;
+        }
 
-		if (!isset($config['formFields'])) {
+        return true;
+    }
 
-			throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "formFields"');
-		}
+    /**
+     * @return mixed|\Symfony\Component\Form\FormInterface
+     */
+    public function getCreateForm()
+    {
+        $formFields = $this->getFormFields($this->config['formFields'], $this->entityPathConfig);
+        $footerFormFields = $this->config['footerFormFields'];
 
-		if (isset($config['modal']) && $config['modal'] == 'false') {
-			$this->modal = false;
-		}
+        $form = $this->getEntityForm($formFields, $this->entityPathConfig, $this->getData());
 
-		return true;
-	}
+        if (isset($footerFormFields['create'])) {
+            $form->add(
+                'create',
+                SubmitType::class,
+                array(
+                    'label' => 'Create',
+                )
+            );
+        }
 
-	/**
-	 * @return mixed|\Symfony\Component\Form\FormInterface
-	 */
-	public function getCreateForm()
-	{
-		$formFields = $this->getFormFields($this->config['formFields'], $this->entityPathConfig);
-		$footerFormFields = $this->config['footerFormFields'];
+        if (isset($footerFormFields['createEdit'])) {
+            $form->add(
+                'createEdit',
+                SubmitType::class,
+                array(
+                    'label' => 'Create & Edit',
+                )
+            );
+        }
 
-		$form = $this->getEntityForm($formFields, $this->entityPathConfig, $this->getData());
+        $this->renderVars['form'] = $form->createView();
+        $this->renderVars['formAction'] = $this->getActionUrl($this->entityPathConfig, 'create', $this->arguments);
+        $this->renderVars['formFields'] = $formFields;
+        $this->renderVars['footerFormFields'] = $footerFormFields;
 
-		if (isset($footerFormFields['create'])) {
-			$form->add(
-				'create',
-				SubmitType::class,
-				array(
-					'label' => 'Créer',
-				)
-			);
-		}
+        return $form;
+    }
 
-		if (isset($footerFormFields['createEdit'])) {
-			$form->add(
-				'createEdit',
-				SubmitType::class,
-				array(
-					'label' => 'Créer & Editer',
-				)
-			);
-		}
+    /**
+     * @return object
+     */
+    public function getData()
+    {
+        $entityClass = new \ReflectionClass($this->getEntityPath($this->entityPathConfig));
+        $data = $entityClass->newInstanceArgs();
 
-		$this->renderVars['form'] = $form->createView();
-		$this->renderVars['formAction'] = $this->getActionUrl($this->entityPathConfig, 'create', $this->arguments);
-		$this->renderVars['formFields'] = $formFields;
-		$this->renderVars['footerFormFields'] = $footerFormFields;
+        foreach ($this->arguments as $argument => $value) {
+            $argument = explode('.', $argument);
 
-		return $form;
-	}
+            $argumentEntityRepositoryName = '';
+            if ($this->entityPathConfig['bundlePrefix'] != '') {
+                $argumentEntityRepositoryName .= $this->entityPathConfig['bundlePrefix'];
+            }
+            $argumentEntityRepositoryName .= $this->entityPathConfig['bundle'] . ':' . ucfirst($argument[0]);
 
-	/**
-	 * @return object
-	 */
-	public function getData()
-	{
-		$entityClass = new \ReflectionClass($this->getEntityPath($this->entityPathConfig));
-		$data = $entityClass->newInstanceArgs();
+            if (isset($globalConfig['repositories'][$argument[0]])) {
+                $argumentEntityRepositoryName = $globalConfig['repositories'][$argument[0]];
+            }
 
-		foreach ($this->arguments as $argument => $value) {
-			$argument = explode('.', $argument);
+            $argumentValue = $this->container->get('doctrine')->getRepository($argumentEntityRepositoryName)->get(
+                'one',
+                array(
+                    'conditions' => array(
+                        $argument[0] . '.' . $argument[1] => $value,
+                    ),
+                )
+            );
+            $data->{'set' . ucfirst($argument[0])}($argumentValue);
+        }
 
-			$argumentEntityRepositoryName = '';
-			if ($this->entityPathConfig['bundlePrefix'] != '') {
-				$argumentEntityRepositoryName .= $this->entityPathConfig['bundlePrefix'];
-			}
-			$argumentEntityRepositoryName .= $this->entityPathConfig['bundle'] . ':' . ucfirst($argument[0]);
+        return $data;
+    }
 
-			if (isset($globalConfig['repositories'][$argument[0]])) {
-				$argumentEntityRepositoryName = $globalConfig['repositories'][$argument[0]];
-			}
+    /**
+     * @param Form $form
+     *
+     * @return JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+     */
+    public function handleFormSubmission(Form $form)
+    {
+        $data = $form->getData();
+        $this->saveEntity($data);
 
-			$argumentValue = $this->container->get('doctrine')->getRepository($argumentEntityRepositoryName)->get(
-				'one',
-				array(
-					'conditions' => array(
-						$argument[0] . '.' . $argument[1] => $value,
-					),
-				)
-			);
-			$data->{'set' . ucfirst($argument[0])}($argumentValue);
-		}
+        return $this->redirectAfterSave($data);
+    }
 
-		return $data;
-	}
+    /**
+     * @param $data
+     */
+    public function saveEntity($data)
+    {
+        $em = $this->container->get('doctrine')->getManager();
 
-	/**
-	 * @param Form $form
-	 *
-	 * @return JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
-	 */
-	public function handleFormSubmission(Form $form)
-	{
-		$data = $form->getData();
-		$this->saveEntity($data);
+        $em->persist($data);
+        $em->flush();
+    }
 
-		return $this->redirectAfterSave($data);
-	}
+    /**
+     * @param $data
+     *
+     * @return JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+     */
+    public function redirectAfterSave($data)
+    {
+        if (isset($config['redirectionAction'])) {
+            $redirectUrl = $this->getActionUrl($this->entityPathConfig, $config['redirectionAction'], $data, true);
+        } else {
+            $redirectUrl = $this->getActionUrl($this->entityPathConfig, 'index', $data, true);
+            if ($this->request->query->get('submitButton') && $this->request->query->get(
+                    'submitButton'
+                ) == 'createEdit'
+            ) {
+                $redirectUrl = $this->getActionUrl($this->entityPathConfig, 'update', $data, true);
+            }
+        }
 
-	/**
-	 * @param $data
-	 */
-	public function saveEntity($data)
-	{
-		$em = $this->container->get('doctrine')->getManager();
+        if ($this->request->isXmlHttpRequest()) {
 
-		$em->persist($data);
-		$em->flush();
-	}
+            return new JsonResponse(
+                array(
+                    'success'  => true,
+                    'redirect' => $redirectUrl,
+                )
+            );
+        }
 
-	/**
-	 * @param $data
-	 *
-	 * @return JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
-	 */
-	public function redirectAfterSave($data)
-	{
-		if (isset($config['redirectionAction'])) {
-			$redirectUrl = $this->getActionUrl($this->entityPathConfig, $config['redirectionAction'], $data, true);
-		} else {
-			$redirectUrl = $this->getActionUrl($this->entityPathConfig, 'index', $data, true);
-			if ($this->request->query->get('submitButton') && $this->request->query->get(
-					'submitButton'
-				) == 'createEdit'
-			) {
-				$redirectUrl = $this->getActionUrl($this->entityPathConfig, 'update', $data, true);
-			}
-		}
+        return $this->redirect($redirectUrl);
+    }
 
-		if ($this->request->isXmlHttpRequest()) {
+    /**
+     * @param $entityPathConfig
+     * @param $renderVars
+     *
+     * @return mixed
+     */
+    public function translateRenderVars($entityPathConfig, $renderVars)
+    {
+        $backendTranslator = $this->container->get('bk.wh.back.translator');
+        $backendTranslator->setDomain($this->getTranslateDomain($entityPathConfig));
 
-			return new JsonResponse(
-				array(
-					'success'  => true,
-					'redirect' => $redirectUrl,
-				)
-			);
-		}
+        $renderVars['title'] = $backendTranslator->trans($renderVars['title']);
 
-		return $this->redirect($redirectUrl);
-	}
+        foreach ($renderVars['form']->children as $formFieldSlug => $formField) {
+            if (isset($formField->vars['label'])) {
+                $formField->vars['label'] = $backendTranslator->trans($formField->vars['label']);
+            }
+
+            if (isset($formField->vars['choices'])) {
+                foreach ($formField->vars['choices'] as $key => $choice) {
+                    $formField->vars['choices'][$key]->label = $backendTranslator->trans($choice->label);
+                }
+            }
+
+            $renderVars['form']->children[$formFieldSlug] = $formField;
+        }
+
+        foreach ($renderVars['footerFormFields'] as $formFieldSlug => $formField) {
+            $formField['label'] = $backendTranslator->trans($formField['label']);
+            $renderVars['footerFormFields'][$formFieldSlug] = $formField;
+        }
+
+        return $renderVars;
+    }
 
 }

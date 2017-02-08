@@ -31,7 +31,6 @@ class UpdateController extends BaseController implements BaseControllerInterface
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->backendTranslator = $this->container->get('bk.wh.back.translator');
     }
 
     /**
@@ -43,8 +42,6 @@ class UpdateController extends BaseController implements BaseControllerInterface
      */
     public function update($entityPathConfig, $id, Request $request)
     {
-        $this->setTranslateDomain($entityPathConfig);
-
         $em = $this->container->get('doctrine')->getManager();
 
         $data = $em->getRepository($this->getRepositoryName($entityPathConfig))->get(
@@ -55,8 +52,8 @@ class UpdateController extends BaseController implements BaseControllerInterface
                 ),
             )
         );
-        if (!$data) {
 
+        if (!$data) {
             return $this->redirect($this->getActionUrl($entityPathConfig, 'index'));
         }
 
@@ -67,25 +64,22 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
         $renderVars['globalConfig'] = $globalConfig;
 
-        $renderVars['title'] = $this->backendTranslator->trans($config['title']);
+        $renderVars['title'] = $config['title'];
 
         $formFields = $this->getFormFields($config['formFields'], $entityPathConfig);
 
         $form = $this->getEntityForm($formFields, $entityPathConfig, $data);
 
         if (!$this->modal) {
-
             $renderVars['breadcrumb'] = $this->getBreadcrumb(
                 $config['breadcrumb'],
                 $entityPathConfig,
                 $data
             );
         } else {
-
             $footerFormFields = $config['footerFormFields'];
 
             foreach ($footerFormFields as $footerFormField) {
-
                 $form->add(
                     $footerFormField['field'],
                     SubmitType::class,
@@ -110,7 +104,6 @@ class UpdateController extends BaseController implements BaseControllerInterface
             }
 
             if ($request->isXmlHttpRequest()) {
-
                 return new JsonResponse(
                     array(
                         'success'  => true,
@@ -121,7 +114,6 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
             return $this->redirect($redirectUrl);
         } else {
-
             $form->setData($data);
         }
 
@@ -130,12 +122,6 @@ class UpdateController extends BaseController implements BaseControllerInterface
         $renderVars['formFields'] = $formFields;
 
         if (!$this->modal) {
-            if (!empty($config['central']['viewLink']['name'])) {
-                $config['central']['viewLink']['name'] = $this->backendTranslator->trans(
-                    $config['central']['viewLink']['name']
-                );
-            }
-
             if (!empty($config['central']['viewLink']['action'])) {
                 $config['central']['viewLink']['url'] = $this->getActionUrl(
                     $entityPathConfig,
@@ -145,9 +131,6 @@ class UpdateController extends BaseController implements BaseControllerInterface
             }
 
             foreach ($config['central']['tabs'] as $tabSlug => $tabProperties) {
-                $config['central']['tabs'][$tabSlug]['name'] = $this->backendTranslator->trans(
-                    $config['central']['tabs'][$tabSlug]['name']
-                );
                 if (isset($tabProperties['iframeContent'])) {
                     $config['central']['tabs'][$tabSlug]['iframeContent']['url'] = $this->getActionUrl(
                         $entityPathConfig,
@@ -155,34 +138,20 @@ class UpdateController extends BaseController implements BaseControllerInterface
                         $data
                     );
                 }
-                if (!empty($tabProperties['formZones'])) {
-                    foreach ($tabProperties['formZones'] as $formZoneSlug => $formZone) {
-                        if (isset($formZone['title'])) {
-                            $config['central']['tabs'][$tabSlug]['formZones'][$formZoneSlug]['title'] = $this->backendTranslator->trans(
-                                $config['central']['tabs'][$tabSlug]['formZones'][$formZoneSlug]['title']
-                            );
-                        }
-                    }
-                }
             }
 
             $renderVars['central'] = $config['central'];
 
             foreach ($config['column']['panelZones'] as $key => $panelZone) {
-                $panelZone['headerLabel'] = $this->backendTranslator->trans($panelZone['headerLabel']);
-
                 $panelZone['form'] = $form;
                 $panelZone['formFields'] = $this->getFormFields($panelZone['fields'], $entityPathConfig);
 
                 unset($panelZone['fields']);
 
                 if (isset($panelZone['footerListFormButtons'])) {
-
                     foreach ($panelZone['footerListFormButtons'] as $field => $footerListFormButton) {
-
                         $footerListFormButton = array_merge($footerListFormButton, $config['formFields'][$field]);
                         $footerListFormButton['form'] = $form;
-                        $footerListFormButton['label'] = $this->backendTranslator->trans($footerListFormButton['label']);
 
                         $panelZone['footerListFormButtons'][$field] = $footerListFormButton;
                     }
@@ -192,7 +161,6 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
             $renderVars['column'] = $config['column'];
         } else {
-
             $renderVars['footerFormFields'] = $footerFormFields;
             $renderVars['formAction'] = $this->getActionUrl($entityPathConfig, 'update', $data);
         }
@@ -204,6 +172,8 @@ class UpdateController extends BaseController implements BaseControllerInterface
                 $view = $config['view'];
             }
         }
+
+        $renderVars = $this->translateRenderVars($entityPathConfig, $renderVars);
 
         return $this->container->get('templating')->renderResponse(
             $view,
@@ -218,9 +188,7 @@ class UpdateController extends BaseController implements BaseControllerInterface
      */
     public function validConfig($config)
     {
-
         if (isset($config['modal']) && $config['modal'] == 'true') {
-
             $this->validConfigPopup($config);
             $this->modal = true;
         } else {
@@ -236,7 +204,6 @@ class UpdateController extends BaseController implements BaseControllerInterface
      */
     public function validConfigPopup($config)
     {
-
         if (!isset($config['formFields'])) {
 
             throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "formFields"');
@@ -250,5 +217,78 @@ class UpdateController extends BaseController implements BaseControllerInterface
      */
     public function validConfigClassic($config)
     {
+    }
+
+    /**
+     * @param $renderVars
+     *
+     * @return mixed
+     */
+    public function translateRenderVars($entityPathConfig, $renderVars)
+    {
+        $backendTranslator = $this->container->get('bk.wh.back.translator');
+        $backendTranslator->setDomain($this->getTranslateDomain($entityPathConfig));
+
+        $renderVars['title'] = $backendTranslator->trans($renderVars['title']);
+
+        foreach ($renderVars['form']->children as $formSlug => $formField) {
+            if (isset($formField->vars['label'])) {
+                $formField->vars['label'] = $backendTranslator->trans($formField->vars['label']);
+            }
+
+            if (isset($formField->vars['choices'])) {
+                foreach ($formField->vars['choices'] as $key => $choice) {
+                    $formField->vars['choices'][$key]->label = $backendTranslator->trans($choice->label);
+                }
+            }
+
+            $renderVars['form']->children[$formSlug] = $formField;
+        }
+
+        if (!$this->modal) {
+            $breadcrumb = array();
+            foreach ($renderVars['breadcrumb'] as $name => $url) {
+                $breadcrumb[$backendTranslator->trans($name)] = $url;
+            }
+            $renderVars['breadcrumb'] = $breadcrumb;
+
+            if (!empty($renderVars['central']['viewLink']['name'])) {
+                $renderVars['central']['viewLink']['name'] = $backendTranslator->trans(
+                    $renderVars['central']['viewLink']['name']
+                );
+            }
+
+            foreach ($renderVars['central']['tabs'] as $tabSlug => $tabProperties) {
+                $tabProperties['name'] = $backendTranslator->trans($tabProperties['name']);
+
+                if (!empty($tabProperties['formZones'])) {
+                    foreach ($tabProperties['formZones'] as $formZoneSlug => $formZone) {
+                        if (isset($formZone['title'])) {
+                            $tabProperties['formZones'][$formZoneSlug]['title'] = $backendTranslator->trans(
+                                $formZone['title']
+                            );
+                        }
+                    }
+                }
+
+                $renderVars['central']['tabs'][$tabSlug] = $tabProperties;
+            }
+
+            foreach ($renderVars['column']['panelZones'] as $key => $panelZone) {
+                $panelZone['headerLabel'] = $backendTranslator->trans($panelZone['headerLabel']);
+
+                if (isset($panelZone['footerListFormButtons'])) {
+                    foreach ($panelZone['footerListFormButtons'] as $field => $footerListFormButton) {
+                        $panelZone['footerListFormButtons'][$field]['label'] = $backendTranslator->trans(
+                            $footerListFormButton['label']
+                        );
+                    }
+                }
+
+                $renderVars['column']['panelZones'][$key] = $panelZone;
+            }
+        }
+
+        return $renderVars;
     }
 }
