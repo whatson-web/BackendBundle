@@ -15,6 +15,7 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Core\Role\Role;
 use Symfony\Component\Yaml\Yaml;
 use WH\LibBundle\Utils\Inflector;
 use WH\MediaBundle\Form\Backend\FileType;
@@ -460,11 +461,23 @@ class BaseController extends Controller implements BaseControllerInterface
                                 switch ($properties['options']['parameter']) {
 
                                     case 'security.role_hierarchy.roles':
-                                        $roles = array_keys(
-                                            $this->container->getParameter($properties['options']['parameter'])
-                                        );
-                                        $roles = array_combine($roles, $roles);
-                                        $options['choices'] = $roles;
+                                        $arrayRoles = $this->getUser()->getRoles();
+
+                                        $roles = array();
+                                        foreach ($arrayRoles as $arrayRole) {
+                                            $roles[] = new Role($arrayRole);
+                                        }
+
+                                        $roles = $this->get('security.role_hierarchy')->getReachableRoles($roles);
+
+                                        $choices = array();
+                                        foreach ($roles as $role) {
+                                            $choices[$role->getRole()] = $role->getRole();
+                                        }
+
+                                        unset($choices['ROLE_USER']);
+
+                                        $options['choices'] = $choices;
                                         break;
 
                                     default:
