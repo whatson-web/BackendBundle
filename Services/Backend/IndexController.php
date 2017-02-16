@@ -413,7 +413,7 @@ class IndexController extends BaseController implements BaseControllerInterface
 
         $paginationLimit = 25;
 
-        $entities = $entityRepository->get(
+        $paginator = $entityRepository->get(
             'paginate',
             array(
                 'paginate'   => array(
@@ -423,19 +423,16 @@ class IndexController extends BaseController implements BaseControllerInterface
                 'conditions' => $this->conditions,
             )
         );
+        $entities = $paginator['entities'];
         $this->renderVars['tablePanelProperties']['entities'] = $entities;
 
-        $pagination = $entityRepository->get(
-            'pagination',
-            array(
-                'paginate'   => array(
-                    'page'  => $paginationPage,
-                    'limit' => $paginationLimit,
-                ),
-                'conditions' => $this->conditions,
-            )
+        $pagination = array(
+            'page'  => $paginationPage,
+            'limit' => $paginationLimit,
+            'count' => $paginator['count'],
+            'url'   => $this->getActionUrl($this->entityPathConfig, 'index', $this->arguments),
         );
-        $pagination['url'] = $this->getActionUrl($this->entityPathConfig, 'index', $this->arguments);
+
         $this->renderVars['pagination'] = $pagination;
 
         return true;
