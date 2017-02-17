@@ -28,15 +28,15 @@ class SrcBundleInstallator
     }
 
     /**
-     * @param $bundle
+     * @param $bundleSlug
      *
      * @return bool
      */
-    public function install($bundle)
+    public function install($bundleSlug)
     {
         $kernel = $this->container->get('kernel');
 
-        switch ($bundle) {
+        switch ($bundleSlug) {
             case 'cms':
                 $bundleName = 'CmsBundle';
                 $srcBundleDirPath = $kernel->getRootDir() . '/../vendor/whatson-web/cms-bundle/SrcBundle';
@@ -49,6 +49,8 @@ class SrcBundleInstallator
         $fs = new Filesystem();
         $fs->mirror($srcBundleDirPath, $kernel->getRootDir() . '/../src/');
 
+        $kernelManipulator = new KernelManipulator($kernel);
+
         $bundle = new Bundle(
             $bundleName,
             $bundleName,
@@ -57,7 +59,24 @@ class SrcBundleInstallator
             false
         );
 
-        $kernelManipulator = new KernelManipulator($kernel);
+        $kernelManipulator->addBundle($bundle->getBundleClassName());
+
+        switch ($bundleSlug) {
+            case 'cms':
+                $bundleNameSpace = 'WH\CmsBundle';
+                $bundleName = 'WHCmsBundle';
+                $bundleDirPath = $kernel->getRootDir() . '/../vendor/whatson-web/cms-bundle/CmsBundle/';
+                break;
+        }
+
+        $bundle = new Bundle(
+            $bundleNameSpace,
+            $bundleName,
+            $bundleDirPath,
+            'annotation',
+            false
+        );
+
         $kernelManipulator->addBundle($bundle->getBundleClassName());
 
         return true;
