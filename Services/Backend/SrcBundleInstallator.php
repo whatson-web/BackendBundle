@@ -41,6 +41,10 @@ class SrcBundleInstallator
                 $bundleName = 'CmsBundle';
                 $srcBundleDirPath = $kernel->getRootDir() . '/../vendor/whatson-web/cms-bundle/SrcBundle';
                 break;
+            case 'blog':
+                $bundleName = 'BlogBundle';
+                $srcBundleDirPath = $kernel->getRootDir() . '/../vendor/whatson-web/blog-bundle/SrcBundle';
+                break;
             default:
                 return false;
                 break;
@@ -66,6 +70,11 @@ class SrcBundleInstallator
                 $bundleNameSpace = 'WH\CmsBundle';
                 $bundleName = 'WHCmsBundle';
                 $bundleDirPath = $kernel->getRootDir() . '/../vendor/whatson-web/cms-bundle/CmsBundle/';
+                break;
+            case 'blog':
+                $bundleNameSpace = 'WH\BlogBundle';
+                $bundleName = 'WHBlogBundle';
+                $bundleDirPath = $kernel->getRootDir() . '/../vendor/whatson-web/blog-bundle/BlogBundle/';
                 break;
         }
 
