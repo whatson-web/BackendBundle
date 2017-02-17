@@ -20,3 +20,6 @@ services:
     bk.wh.back.translator:
         class: WH\BackendBundle\Services\Backend\Translator
         arguments: ['@service_container']
+    bk.wh.back.srcbundleinstallator:
+        class: WH\BackendBundle\Services\Backend\SrcBundleInstallator
+        arguments: ['@service_container']
