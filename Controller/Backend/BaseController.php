@@ -597,6 +597,12 @@ class BaseController extends Controller implements BaseControllerInterface
                     if (isset($properties['formTemplateHead'])) {
                         $options['attr']['data-form-template-head'] = $properties['formTemplateHead'];
                     }
+                    if (isset($properties['sortable'])) {
+                        $options['attr']['data-sortable-url'] = $this->getActionUrl(
+                            $properties['sortable']['entityPathConfig'],
+                            'order'
+                        );
+                    }
                     break;
 
                 case 'sub-form':
