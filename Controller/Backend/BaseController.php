@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityRepository;
 use FM\ElfinderBundle\Form\Type\ElFinderType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
@@ -17,6 +18,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Role\Role;
 use Symfony\Component\Yaml\Yaml;
+use WH\BackendBundle\Form\EntryType;
 use WH\LibBundle\Utils\Inflector;
 use WH\MediaBundle\Form\Backend\FileType;
 
@@ -412,7 +414,7 @@ class BaseController extends Controller implements BaseControllerInterface
      *
      * @return mixed
      */
-    private function addFormFieldsToForm($form, $formFields, $entityPathConfig = array())
+    public function addFormFieldsToForm($form, $formFields, $entityPathConfig = array())
     {
         foreach ($formFields as $formField => $properties) {
             $options = array(
@@ -585,7 +587,12 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'collection':
                     $properties['type'] = CollectionType::class;
-                    $options['entry_type'] = $properties['form'];
+                    if (isset($properties['collectionOptions'])) {
+                        $options['entry_type'] = $this->get('bk.wh.back.form.entry');
+                        $options['entry_options'] = array('collectionOptions' => $properties['collectionOptions']);
+                    } else {
+                        $options['entry_type'] = $properties['form'];
+                    }
                     $options['allow_add'] = true;
                     $options['allow_delete'] = true;
                     $options['delete_empty'] = true;

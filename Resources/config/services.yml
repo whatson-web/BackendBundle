@@ -23,3 +23,6 @@ services:
     bk.wh.back.srcbundleinstallator:
         class: WH\BackendBundle\Services\Backend\SrcBundleInstallator
         arguments: ['@service_container']
+    bk.wh.back.form.entry:
+        class: WH\BackendBundle\Form\EntryType
+        arguments: ['@service_container']
