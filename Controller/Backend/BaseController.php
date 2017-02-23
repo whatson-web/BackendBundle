@@ -587,12 +587,7 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'collection':
                     $properties['type'] = CollectionType::class;
-                    if (isset($properties['collectionOptions'])) {
-                        $options['entry_type'] = $this->get('bk.wh.back.form.entry');
-                        $options['entry_options'] = array('collectionOptions' => $properties['collectionOptions']);
-                    } else {
-                        $options['entry_type'] = $properties['form'];
-                    }
+                    $options['entry_type'] = $properties['form'];
                     $options['allow_add'] = true;
                     $options['allow_delete'] = true;
                     $options['delete_empty'] = true;
