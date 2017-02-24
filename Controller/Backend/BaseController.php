@@ -12,6 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -349,13 +350,14 @@ class BaseController extends Controller implements BaseControllerInterface
     }
 
     /**
-     * @param $formFields
+     * @param        $formFields
+     * @param string $formName
      *
-     * @return \Symfony\Component\Form\Form|\Symfony\Component\Form\FormInterface
+     * @return mixed
      */
-    public function getForm($formFields)
+    public function getForm($formFields, $formName = 'searchForm')
     {
-        $form = $this->container->get('form.factory')->createNamedBuilder('searchForm');
+        $form = $this->container->get('form.factory')->createNamedBuilder($formName);
 
         $form = $this->addFormFieldsToForm($form, $formFields);
 
@@ -556,6 +558,11 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'text':
                     $properties['type'] = TextType::class;
+                    break;
+
+                case 'number':
+                    $properties['type'] = NumberType::class;
+                    $options['scale'] = (int)$properties['scale'];
                     break;
 
                 case 'textarea':

@@ -17,12 +17,12 @@ services:
     bk.wh.back.delete_controller:
         class: WH\BackendBundle\Services\Backend\DeleteController
         arguments: ['@service_container']
+    bk.wh.back.import_controller:
+        class: WH\BackendBundle\Services\Backend\ImportController
+        arguments: ['@service_container']
     bk.wh.back.translator:
         class: WH\BackendBundle\Services\Backend\Translator
         arguments: ['@service_container']
     bk.wh.back.srcbundleinstallator:
         class: WH\BackendBundle\Services\Backend\SrcBundleInstallator
-        arguments: ['@service_container']
-    bk.wh.back.form.entry:
-        class: WH\BackendBundle\Form\EntryType
         arguments: ['@service_container']
