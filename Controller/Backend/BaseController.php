@@ -625,7 +625,7 @@ class BaseController extends Controller implements BaseControllerInterface
 
             if ($properties['type'] == FormType::class) {
                 $entityPathConfigPage = array(
-                    'bundlePrefix' => 'WH',
+                    'bundlePrefix' => '',
                     'bundle'       => 'CmsBundle',
                     'entity'       => 'Page',
                     'type'         => 'Backend',
