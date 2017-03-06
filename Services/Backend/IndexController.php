@@ -274,6 +274,27 @@ class IndexController extends BaseController implements BaseControllerInterface
 
         // Data initialisation
         $data = $this->container->get('session')->get($this->getSlug($this->entityPathConfig) . 'search');
+
+        $em = $this->container->get('doctrine')->getManager();
+
+        foreach ($formFields as $formFieldSlug => $formFieldProperties) {
+            if (isset($data[$formFieldSlug])) {
+                switch ($formFieldProperties['type']) {
+                    case 'entity':
+                        $className = lcfirst(preg_replace('#.*:(.*)#', '$1', $formFieldProperties['class']));
+                        $data[$formFieldSlug] = $em->getRepository($formFieldProperties['class'])->get(
+                            'one',
+                            array(
+                                'conditions' => array(
+                                    $className . '.id' => $data[$formFieldSlug],
+                                ),
+                            )
+                        );
+                        break;
+                }
+            }
+        }
+
         $form->setData($data);
 
         // Get conditions from data
@@ -307,8 +328,6 @@ class IndexController extends BaseController implements BaseControllerInterface
 
             $formFields = $this->config['formPanelProperties']['formFields'];
 
-            $em = $this->get('doctrine')->getManager();
-
             $formData = array();
 
             foreach ($formFields as $formFieldSlug => $formFieldProperties) {
@@ -316,18 +335,6 @@ class IndexController extends BaseController implements BaseControllerInterface
                     $formData[$formFieldSlug] = $data[$formFieldSlug];
 
                     switch ($formFieldProperties['type']) {
-                        case 'entity':
-                            $className = lcfirst(preg_replace('#.*:(.*)#', '$1', $formFieldProperties['class']));
-                            $formData[$formFieldSlug] = $em->getRepository($formFieldProperties['class'])->get(
-                                'one',
-                                array(
-                                    'conditions' => array(
-                                        $className . '.id' => $data[$formFieldSlug],
-                                    ),
-                                )
-                            );
-                            break;
-
                         case 'date':
                             $value = $data[$formFieldSlug];
                             if (!$value['day'] || !$value['month'] || !$value['year']) {
@@ -336,6 +343,22 @@ class IndexController extends BaseController implements BaseControllerInterface
                                 $date = $value['year'] . '-';
                                 $date .= str_pad($value['month'], 2, '0', STR_PAD_LEFT) . '-';
                                 $date .= str_pad($value['day'], 2, '0', STR_PAD_LEFT);
+                                $date = new \DateTime($date);
+                                $formData[$formFieldSlug] = $date;
+                            }
+                            break;
+
+                        case 'datetime':
+                            $value = $data[$formFieldSlug];
+
+                            if ($value['date']['day'] == '' || $value['date']['month'] == '' || $value['date']['year'] == '' || $value['time']['minute'] == '' || $value['time']['hour'] == '') {
+                                $formData[$formFieldSlug] = null;
+                            } else {
+                                $date = $value['date']['year'] . '-';
+                                $date .= str_pad($value['date']['month'], 2, '0', STR_PAD_LEFT) . '-';
+                                $date .= str_pad($value['date']['day'], 2, '0', STR_PAD_LEFT) . ' ';
+                                $date .= str_pad($value['time']['hour'], 2, '0', STR_PAD_LEFT) . ':';
+                                $date .= str_pad($value['time']['minute'], 2, '0', STR_PAD_LEFT) . ' ';
                                 $date = new \DateTime($date);
                                 $formData[$formFieldSlug] = $date;
                             }
@@ -462,6 +485,7 @@ class IndexController extends BaseController implements BaseControllerInterface
             }
 
             $defaultExpression = $entity . '.' . $formField;
+
             if (preg_match('#.*\..*#', $properties['conditionField'])) {
                 $defaultExpression = $properties['conditionField'];
             } else {
