@@ -10,8 +10,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -505,6 +507,10 @@ class BaseController extends Controller implements BaseControllerInterface
 
                     break;
 
+                case 'email':
+                    $properties['type'] = EmailType::class;
+                    break;
+
                 case 'entity':
                     $properties['type'] = EntityType::class;
                     $options['class'] = $properties['class'];
@@ -557,6 +563,10 @@ class BaseController extends Controller implements BaseControllerInterface
                     $properties['type'] = HiddenType::class;
                     break;
 
+                case 'integer':
+                    $properties['type'] = IntegerType::class;
+                    break;
+
                 case 'text':
                     $properties['type'] = TextType::class;
                     break;
@@ -577,6 +587,10 @@ class BaseController extends Controller implements BaseControllerInterface
                     $class = 'tinymce ' . $class;
                     $options['attr']['class'] = $class;
 
+                    break;
+
+                case 'file':
+                    $properties['type'] = \Symfony\Component\Form\Extension\Core\Type\FileType::class;
                     break;
 
                 case 'wh_file':
