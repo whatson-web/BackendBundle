@@ -378,34 +378,36 @@ class BaseController extends Controller implements BaseControllerInterface
 
         $formFields = array();
 
-        foreach ($configFormFields as $key => $configFormField) {
-            $formFieldSlug = null;
-            if (!is_array($configFormField) && preg_match('#.*\..*#', $configFormField)) {
-                $formFieldSlug = $configFormField;
-                $configFormField = explode('.', $configFormField);
-                $configFormField = array_combine($configFormField, $configFormField);
-            }
-            if (is_array($configFormField)) {
-                if (!$formFieldSlug) {
-                    $formFieldSlug = $key;
-                }
-
-                if (isset($globalConfig['formFields'][$key])) {
-                    $formField = array_merge($globalConfig['formFields'][$key], $configFormField);
-                } else {
-                    $formField = $configFormField;
-                }
-            } else {
-                if (is_integer($key)) {
+        if (is_array($configFormFields)) {
+            foreach ($configFormFields as $key => $configFormField) {
+                $formFieldSlug = null;
+                if (!is_array($configFormField) && preg_match('#.*\..*#', $configFormField)) {
                     $formFieldSlug = $configFormField;
+                    $configFormField = explode('.', $configFormField);
+                    $configFormField = array_combine($configFormField, $configFormField);
+                }
+                if (is_array($configFormField)) {
+                    if (!$formFieldSlug) {
+                        $formFieldSlug = $key;
+                    }
+
+                    if (isset($globalConfig['formFields'][$key])) {
+                        $formField = array_merge($globalConfig['formFields'][$key], $configFormField);
+                    } else {
+                        $formField = $configFormField;
+                    }
                 } else {
-                    $formFieldSlug = $key;
+                    if (is_integer($key)) {
+                        $formFieldSlug = $configFormField;
+                    } else {
+                        $formFieldSlug = $key;
+                    }
+
+                    $formField = $globalConfig['formFields'][$formFieldSlug];
                 }
 
-                $formField = $globalConfig['formFields'][$formFieldSlug];
+                $formFields[$formFieldSlug] = $formField;
             }
-
-            $formFields[$formFieldSlug] = $formField;
         }
 
         return $formFields;
@@ -638,22 +640,16 @@ class BaseController extends Controller implements BaseControllerInterface
             }
 
             if ($properties['type'] == FormType::class) {
-                $entityPathConfigPage = array(
-                    'bundlePrefix' => '',
-                    'bundle'       => 'CmsBundle',
-                    'entity'       => 'Page',
-                    'type'         => 'Backend',
-                );
-                $formData = $form->getData();
                 $subForm = $this->getEntityForm(
                     $properties['fields'],
-                    $entityPathConfigPage,
-                    $formData->getPage(),
-                    'page',
+                    $properties['entityPathConfig'],
+                    $this->getVariableValue($formField, $form->getData()),
+                    $formField,
                     array(
                         'auto_initialize' => false,
                     )
                 );
+
                 $form->add($subForm);
             } else {
                 $form->add(
