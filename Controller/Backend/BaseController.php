@@ -457,11 +457,11 @@ class BaseController extends Controller implements BaseControllerInterface
                                     $entityPath .= '\\' . $entityPathConfig['bundlePrefix'];
                                 }
                                 $entityPath .= '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
-                                $options['choices'] = $entityPath::$field();
+                                $options['choices'] = array_flip($entityPath::$field());
                                 foreach ($options['choices'] as $key => $value) {
                                     $options['choices'][$key] = $value;
                                 }
-                                $options['empty_value'] = false;
+                                $options['placeholder'] = false;
                                 break;
 
                             case 'parameter':
@@ -527,12 +527,19 @@ class BaseController extends Controller implements BaseControllerInterface
 
                         $options['query_builder'] = $query;
                     }
+
                     if (isset($properties['multiple'])) {
                         $options['multiple'] = $properties['multiple'];
                     }
+
                     if (isset($properties['group_by'])) {
                         $options['group_by'] = $properties['group_by'];
                     }
+
+                    if (isset($properties['choices'])) {
+                        $options['choices'] = $properties['choices'];
+                    }
+
                     if (isset($properties['custom_query_builder'])) {
                         $em = $this->container->get('doctrine')->getManager();
                         $entityRepository = $em->getRepository($properties['class']);
@@ -571,6 +578,10 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'text':
                     $properties['type'] = TextType::class;
+
+                    if (isset($properties['disabled'])) {
+                        $options['disabled'] = $properties['disabled'];
+                    }
                     break;
 
                 case 'number':
@@ -618,14 +629,20 @@ class BaseController extends Controller implements BaseControllerInterface
                     $options['delete_empty'] = true;
                     $options['by_reference'] = false;
                     $options['attr']['data-form-template'] = $properties['formTemplate'];
+
                     if (isset($properties['formTemplateHead'])) {
                         $options['attr']['data-form-template-head'] = $properties['formTemplateHead'];
                     }
+
                     if (isset($properties['sortable'])) {
                         $options['attr']['data-sortable-url'] = $this->getActionUrl(
                             $properties['sortable']['entityPathConfig'],
                             'order'
                         );
+                    }
+
+                    if (isset($properties['disableAdd'])) {
+                        $options['attr']['disableAdd'] = $properties['disableAdd'];
                     }
                     break;
 
@@ -670,9 +687,7 @@ class BaseController extends Controller implements BaseControllerInterface
      */
     public function getDataFromArguments($arguments)
     {
-
         $data = array();
-
         if (empty($arguments)) {
             return $data;
         }
@@ -692,13 +707,10 @@ class BaseController extends Controller implements BaseControllerInterface
      */
     public function transformActionIntoRoute($fields, $entityPathConfig)
     {
-
         $globalConfig = $this->getGlobalConfig($entityPathConfig);
 
         foreach ($fields as $key => $field) {
-
             if (isset($field['action'])) {
-
                 $action = $globalConfig['actions'][$field['action']];
                 $field = array_merge($field, $action);
 

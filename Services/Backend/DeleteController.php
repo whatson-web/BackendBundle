@@ -49,6 +49,11 @@ class DeleteController extends BaseController implements BaseControllerInterface
         $em->remove($data);
         $em->flush();
 
+        $config = $this->getConfig($entityPathConfig, 'delete');
+        if (isset($config['redirectAction'])) {
+            return $this->redirect($this->getActionUrl($entityPathConfig, $config['redirectAction'], $data));
+        }
+
         return $this->redirect($this->getActionUrl($entityPathConfig, 'index', $data));
     }
 

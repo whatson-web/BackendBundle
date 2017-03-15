@@ -75,6 +75,8 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
         $this->data = $data;
 
+        $this->renderVars['data'] = $this->data;
+
         $this->config = $this->getConfig($entityPathConfig, 'update');
         $this->globalConfig = $this->getGlobalConfig($entityPathConfig);
 
@@ -101,9 +103,9 @@ class UpdateController extends BaseController implements BaseControllerInterface
         $view = '@WHBackendTemplate/BackendTemplate/View/update.html.twig';
         if ($this->modal) {
             $view = '@WHBackendTemplate/BackendTemplate/View/modal.html.twig';
-            if (isset($this->config['view'])) {
-                $view = $this->config['view'];
-            }
+        }
+        if (isset($this->config['view'])) {
+            $view = $this->config['view'];
         }
 
         $this->renderVars = $this->translateRenderVars($entityPathConfig, $this->renderVars);
@@ -330,12 +332,33 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
             foreach ($this->config['central']['tabs'] as $tabSlug => $tabProperties) {
                 if (isset($tabProperties['iframeContent'])) {
-                    $this->config['central']['tabs'][$tabSlug]['iframeContent']['url'] = $this->getActionUrl(
+                    $tabProperties['iframeContent']['url'] = $this->getActionUrl(
                         $this->entityPathConfig,
                         $tabProperties['iframeContent']['action'],
                         $this->data
                     );
                 }
+
+                if (!empty($tabProperties['formZones'])) {
+                    foreach ($tabProperties['formZones'] as $formZoneSlug => $formZone) {
+                        if (isset($formZone['listButtons'])) {
+                            foreach ($formZone['listButtons'] as $button => $listButton) {
+                                $listButton['buttonType'] = 'link';
+                                $listButton['href'] = $this->getActionUrl(
+                                    $this->entityPathConfig,
+                                    $listButton['action'],
+                                    $this->data
+                                );
+
+                                $formZone['listButtons'][$button] = $listButton;
+                            }
+                        }
+
+                        $tabProperties['formZones'][$formZoneSlug] = $formZone;
+                    }
+                }
+
+                $this->config['central']['tabs'][$tabSlug] = $tabProperties;
             }
 
             $this->renderVars['central'] = $this->config['central'];
