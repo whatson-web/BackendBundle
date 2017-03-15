@@ -220,6 +220,22 @@ class UpdateController extends BaseController implements BaseControllerInterface
                     }
                 }
 
+                if (!empty($tabProperties['formZones'])) {
+                    foreach ($tabProperties['formZones'] as $formZoneSlug => $formZone) {
+                        if (isset($formZone['listButtons'])) {
+                            foreach ($formZone['listButtons'] as $button => $listButton) {
+                                $listButton['label'] = $backendTranslator->trans(
+                                    $listButton['label']
+                                );
+                                
+                                $formZone['listButtons'][$button] = $listButton;
+                            }
+                        }
+
+                        $tabProperties['formZones'][$formZoneSlug] = $formZone;
+                    }
+                }
+
                 $renderVars['central']['tabs'][$tabSlug] = $tabProperties;
             }
 
