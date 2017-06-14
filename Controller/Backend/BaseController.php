@@ -635,10 +635,7 @@ class BaseController extends Controller implements BaseControllerInterface
                     }
 
                     if (isset($properties['sortable'])) {
-                        $options['attr']['data-sortable-url'] = $this->getActionUrl(
-                            $properties['sortable']['entityPathConfig'],
-                            'order'
-                        );
+                        $options['attr']['data-sortable'] = true;
                     }
 
                     if (isset($properties['disableAdd'])) {
