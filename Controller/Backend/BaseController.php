@@ -423,6 +423,10 @@ class BaseController extends Controller implements BaseControllerInterface
     public function addFormFieldsToForm($form, $formFields, $entityPathConfig = [])
     {
         foreach ($formFields as $formField => $properties) {
+            if (isset($properties['field'])) {
+                $formField = $properties['field'];
+            }
+
             $options = [
                 'label'    => (!empty($properties['label'])) ? $properties['label'] : false,
                 'required' => false,
