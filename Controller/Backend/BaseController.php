@@ -493,9 +493,9 @@ class BaseController extends Controller implements BaseControllerInterface
                                         break;
 
                                     default:
-                                        $options['choices'] = $this->container->getParameter(
-                                            $properties['options']['parameter']
-                                        );
+                                        $choices = $this->container->getParameter($properties['options']['parameter']);
+                                        $choices = array_flip($choices);
+                                        $options['choices'] = $choices;
                                         break;
                                 }
 
