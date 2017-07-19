@@ -10,6 +10,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
@@ -511,6 +513,14 @@ class BaseController extends Controller implements BaseControllerInterface
                         $options['multiple'] = $properties['multiple'];
                     }
 
+                    break;
+
+                case 'date':
+                    $properties['type'] = DateType::class;
+                    break;
+
+                case 'datetime':
+                    $properties['type'] = DateTimeType::class;
                     break;
 
                 case 'email':
