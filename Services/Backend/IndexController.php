@@ -365,7 +365,7 @@ class IndexController extends BaseController implements BaseControllerInterface
             $this->container->get('session')->set($this->getSlug($this->entityPathConfig) . 'search', $formData);
 
             return $this->redirect(
-                $this->getActionUrl($this->entityPathConfig, 'index')
+                $this->getActionUrl($this->entityPathConfig, 'index', $this->arguments)
             );
         }
 
