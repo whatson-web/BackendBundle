@@ -17,6 +17,7 @@ use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -588,6 +589,10 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'integer':
                     $properties['type'] = IntegerType::class;
+                    break;
+
+                case 'password':
+                    $properties['type'] = PasswordType::class;
                     break;
 
                 case 'text':
