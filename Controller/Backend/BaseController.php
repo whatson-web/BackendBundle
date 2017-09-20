@@ -459,11 +459,15 @@ class BaseController extends Controller implements BaseControllerInterface
                         switch ($properties['options']['type']) {
                             case 'static':
                                 $field = 'get' . ucfirst($properties['options']['field']);
-                                $entityPath = '';
-                                if ($entityPathConfig['bundlePrefix']) {
-                                    $entityPath .= '\\' . $entityPathConfig['bundlePrefix'];
+                                if (isset($properties['options']['entityPath'])) {
+                                    $entityPath = $properties['options']['entityPath'];
+                                } else {
+                                    $entityPath = '';
+                                    if ($entityPathConfig['bundlePrefix']) {
+                                        $entityPath .= '\\' . $entityPathConfig['bundlePrefix'];
+                                    }
+                                    $entityPath .= '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
                                 }
-                                $entityPath .= '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
                                 $options['choices'] = array_flip($entityPath::$field());
                                 foreach ($options['choices'] as $key => $value) {
                                     $options['choices'][$key] = $value;
