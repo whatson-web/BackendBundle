@@ -511,7 +511,7 @@ class BaseController extends Controller implements BaseControllerInterface
                     }
 
                     if (isset($properties['empty_data'])) {
-                        $options['empty_value'] = $properties['empty_data'];
+                        $options['placeholder'] = $properties['empty_data'];
                     }
 
                     if (isset($properties['multiple'])) {

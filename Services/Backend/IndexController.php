@@ -480,7 +480,7 @@ class IndexController extends BaseController implements BaseControllerInterface
 
             $value = $data[$formField];
 
-            if (!$value) {
+            if ($value == null) {
                 continue;
             }
 
@@ -515,6 +515,10 @@ class IndexController extends BaseController implements BaseControllerInterface
                     case 'like':
                         $defaultExpression .= ' LIKE';
                         $value = '%' . $value . '%';
+                        break;
+
+                    case 'equal':
+                        $defaultExpression .= '';
                         break;
 
                     case 'joinedEntity':
