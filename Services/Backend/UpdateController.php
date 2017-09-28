@@ -84,7 +84,12 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
         $this->createUpdateForm();
         if ($this->request->getMethod() == 'POST') {
-            return $this->handleUpdateFormSubmission();
+            $response = $this->handleUpdateFormSubmission();
+            if ($response != false) {
+                return $response;
+            }
+
+            $this->renderVars['form'] = $this->form->createView();
         }
         $this->renderUpdateForm();
 
@@ -291,6 +296,10 @@ class UpdateController extends BaseController implements BaseControllerInterface
         $this->form->handleRequest($this->request);
 
         if ($this->form->isSubmitted()) {
+            if (!$this->form->isValid()) {
+                return false;
+            }
+
             $data = $this->form->getData();
 
             $em = $this->get('doctrine')->getManager();
