@@ -273,7 +273,7 @@ class IndexController extends BaseController implements BaseControllerInterface
         }
 
         // Data initialisation
-        $data = $this->container->get('session')->get($this->getSlug($this->entityPathConfig) . 'search');
+        $data = $this->container->get('session')->get($this->getSlug($this->entityPathConfig).'search');
 
         $em = $this->container->get('doctrine')->getManager();
 
@@ -286,7 +286,7 @@ class IndexController extends BaseController implements BaseControllerInterface
                             'one',
                             [
                                 'conditions' => [
-                                    $className . '.id' => $data[$formFieldSlug],
+                                    $className.'.id' => $data[$formFieldSlug],
                                 ],
                             ]
                         );
@@ -340,8 +340,8 @@ class IndexController extends BaseController implements BaseControllerInterface
                             if (!$value['day'] || !$value['month'] || !$value['year']) {
                                 $formData[$formFieldSlug] = null;
                             } else {
-                                $date = $value['year'] . '-';
-                                $date .= str_pad($value['month'], 2, '0', STR_PAD_LEFT) . '-';
+                                $date = $value['year'].'-';
+                                $date .= str_pad($value['month'], 2, '0', STR_PAD_LEFT).'-';
                                 $date .= str_pad($value['day'], 2, '0', STR_PAD_LEFT);
                                 $date = new \DateTime($date);
                                 $formData[$formFieldSlug] = $date;
@@ -354,20 +354,28 @@ class IndexController extends BaseController implements BaseControllerInterface
                             if ($value['date']['day'] == '' || $value['date']['month'] == '' || $value['date']['year'] == '' || $value['time']['minute'] == '' || $value['time']['hour'] == '') {
                                 $formData[$formFieldSlug] = null;
                             } else {
-                                $date = $value['date']['year'] . '-';
-                                $date .= str_pad($value['date']['month'], 2, '0', STR_PAD_LEFT) . '-';
-                                $date .= str_pad($value['date']['day'], 2, '0', STR_PAD_LEFT) . ' ';
-                                $date .= str_pad($value['time']['hour'], 2, '0', STR_PAD_LEFT) . ':';
-                                $date .= str_pad($value['time']['minute'], 2, '0', STR_PAD_LEFT) . ' ';
+                                $date = $value['date']['year'].'-';
+                                $date .= str_pad($value['date']['month'], 2, '0', STR_PAD_LEFT).'-';
+                                $date .= str_pad($value['date']['day'], 2, '0', STR_PAD_LEFT).' ';
+                                $date .= str_pad($value['time']['hour'], 2, '0', STR_PAD_LEFT).':';
+                                $date .= str_pad($value['time']['minute'], 2, '0', STR_PAD_LEFT).' ';
                                 $date = new \DateTime($date);
                                 $formData[$formFieldSlug] = $date;
+                            }
+                            break;
+
+                        case 'checkbox':
+                            $value = $data[$formFieldSlug];
+
+                            if ($value == 1) {
+                                $formData[$formFieldSlug] = true;
                             }
                             break;
                     }
                 }
             }
 
-            $this->container->get('session')->set($this->getSlug($this->entityPathConfig) . 'search', $formData);
+            $this->container->get('session')->set($this->getSlug($this->entityPathConfig).'search', $formData);
 
             return $this->redirect(
                 $this->getActionUrl($this->entityPathConfig, 'index')
@@ -484,13 +492,13 @@ class IndexController extends BaseController implements BaseControllerInterface
                 continue;
             }
 
-            $defaultExpression = $entity . '.' . $formField;
+            $defaultExpression = $entity.'.'.$formField;
 
             if (preg_match('#.*\..*#', $properties['conditionField'])) {
                 $defaultExpression = $properties['conditionField'];
             } else {
                 if (!empty($properties['conditionField'])) {
-                    $defaultExpression = $entity . '.' . $properties['conditionField'];
+                    $defaultExpression = $entity.'.'.$properties['conditionField'];
                 }
             }
 
@@ -514,7 +522,7 @@ class IndexController extends BaseController implements BaseControllerInterface
 
                     case 'like':
                         $defaultExpression .= ' LIKE';
-                        $value = '%' . $value . '%';
+                        $value = '%'.$value.'%';
                         break;
 
                     case 'equal':
@@ -522,7 +530,7 @@ class IndexController extends BaseController implements BaseControllerInterface
                         break;
 
                     case 'joinedEntity':
-                        $defaultExpression = $formField . '.id';
+                        $defaultExpression = $formField.'.id';
                         break;
                 }
             }
