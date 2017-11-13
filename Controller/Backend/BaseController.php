@@ -27,6 +27,8 @@ use Symfony\Component\Yaml\Yaml;
 use WH\BackendBundle\Form\EntryType;
 use WH\LibBundle\Utils\Inflector;
 use WH\MediaBundle\Form\Backend\FileType;
+use WH\MediaBundle\Form\Backend\TranslatableFileType;
+
 
 /**
  * Class BaseController
@@ -636,6 +638,10 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'wh_file':
                     $properties['type'] = FileType::class;
+                    break;
+
+                case 'wh_file_translatable':
+                    $properties['type'] = TranslatableFileType::class;
                     break;
 
                 case 'elfinder':
