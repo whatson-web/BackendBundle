@@ -8,15 +8,10 @@ use WH\BackendBundle\Controller\Backend\BaseController;
 use WH\BackendBundle\Controller\Backend\BaseControllerInterface;
 
 /**
- * Class ImportController
- *
- * @package WH\BackendBundle\Services\Backend
+ * Class ImportController.
  */
 class ImportController extends BaseController implements BaseControllerInterface
 {
-
-    protected $container;
-
     public $renderVars;
 
     public $config;
@@ -27,6 +22,8 @@ class ImportController extends BaseController implements BaseControllerInterface
     public $arguments;
 
     public $csvImporter;
+
+    protected $container;
 
     /**
      * SearchController constructor.
@@ -61,12 +58,12 @@ class ImportController extends BaseController implements BaseControllerInterface
         $this->csvImporter = $this->get('lib.csv_importer');
 
         $return = $this->handleImportForm();
-        if ($return !== true) {
+        if (true !== $return) {
             return $return;
         }
 
         $return = $this->handleConfirmationForm();
-        if ($return !== true) {
+        if (true !== $return) {
             return $return;
         }
 
@@ -91,15 +88,15 @@ class ImportController extends BaseController implements BaseControllerInterface
     {
         $importFormFields = [
             'csv' => [
-                'type'  => 'file',
+                'type' => 'file',
                 'label' => 'CSV File',
             ],
         ];
 
         $importFooterListButtons = [
             'submit' => [
-                'type'       => 'submit',
-                'label'      => 'Importer',
+                'type' => 'submit',
+                'label' => 'Importer',
                 'buttonType' => 'button',
             ],
         ];
@@ -116,7 +113,7 @@ class ImportController extends BaseController implements BaseControllerInterface
                     $this->getSlug($this->entityPathConfig)
                 );
 
-                $this->get('session')->set($this->getSlug($this->entityPathConfig) . 'importFilePath', $filePath);
+                $this->get('session')->set($this->getSlug($this->entityPathConfig).'importFilePath', $filePath);
 
                 return $this->redirect(
                     $this->getActionUrl(
@@ -128,10 +125,10 @@ class ImportController extends BaseController implements BaseControllerInterface
         }
 
         $this->renderVars['importFormPanelProperties'] = [
-            'form'              => $importForm->createView(),
-            'formFields'        => $importFormFields,
+            'form' => $importForm->createView(),
+            'formFields' => $importFormFields,
             'footerListButtons' => $importFooterListButtons,
-            'headerLabel'       => 'Import CSV',
+            'headerLabel' => 'Import CSV',
         ];
 
         return true;
@@ -144,14 +141,14 @@ class ImportController extends BaseController implements BaseControllerInterface
     {
         $confirmationFormFields = [
             'submit' => [
-                'type'  => 'submit',
+                'type' => 'submit',
                 'label' => 'Confirm import',
             ],
         ];
 
         $confirmationFormFooterListButtons = [
             'submit' => [
-                'label'      => 'Confirm import',
+                'label' => 'Confirm import',
                 'buttonType' => 'button',
             ],
         ];
@@ -167,10 +164,10 @@ class ImportController extends BaseController implements BaseControllerInterface
         $this->renderVars['importResponse'] = $importResponse;
 
         $this->renderVars['confirmationFormPanelProperties'] = [
-            'form'              => $confirmationForm->createView(),
-            'formFields'        => $confirmationFormFields,
+            'form' => $confirmationForm->createView(),
+            'formFields' => $confirmationFormFields,
             'footerListButtons' => $confirmationFormFooterListButtons,
-            'headerLabel'       => 'Confirm import',
+            'headerLabel' => 'Confirm import',
         ];
 
         return true;
@@ -183,7 +180,7 @@ class ImportController extends BaseController implements BaseControllerInterface
      */
     public function getFilePath($entityPathConfig)
     {
-        return $this->get('session')->get($this->getSlug($entityPathConfig) . 'importFilePath');
+        return $this->get('session')->get($this->getSlug($entityPathConfig).'importFilePath');
     }
 
     /**
@@ -213,5 +210,4 @@ class ImportController extends BaseController implements BaseControllerInterface
 
         return $importResponse;
     }
-
 }

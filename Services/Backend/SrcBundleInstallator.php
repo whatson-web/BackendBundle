@@ -8,13 +8,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
- * Class SrcBundleInstallator
- *
- * @package WH\BackendBundle\Services\Backend
+ * Class SrcBundleInstallator.
  */
 class SrcBundleInstallator
 {
-
     private $container;
 
     /**
@@ -39,11 +36,13 @@ class SrcBundleInstallator
         switch ($bundleSlug) {
             case 'cms':
                 $bundleName = 'CmsBundle';
-                $srcBundleDirPath = $kernel->getRootDir() . '/../vendor/whatson-web/cms-bundle/SrcBundle';
+                $srcBundleDirPath = $kernel->getRootDir().'/../vendor/whatson-web/cms-bundle/SrcBundle';
+
                 break;
             case 'blog':
                 $bundleName = 'BlogBundle';
-                $srcBundleDirPath = $kernel->getRootDir() . '/../vendor/whatson-web/blog-bundle/SrcBundle';
+                $srcBundleDirPath = $kernel->getRootDir().'/../vendor/whatson-web/blog-bundle/SrcBundle';
+
                 break;
             default:
                 return false;
@@ -51,14 +50,14 @@ class SrcBundleInstallator
         }
 
         $fs = new Filesystem();
-        $fs->mirror($srcBundleDirPath, $kernel->getRootDir() . '/../src/');
+        $fs->mirror($srcBundleDirPath, $kernel->getRootDir().'/../src/');
 
         $kernelManipulator = new KernelManipulator($kernel);
 
         $bundle = new Bundle(
             $bundleName,
             $bundleName,
-            $kernel->getRootDir() . '/../src/',
+            $kernel->getRootDir().'/../src/',
             'annotation',
             false
         );
@@ -69,12 +68,14 @@ class SrcBundleInstallator
             case 'cms':
                 $bundleNameSpace = 'WH\CmsBundle';
                 $bundleName = 'WHCmsBundle';
-                $bundleDirPath = $kernel->getRootDir() . '/../vendor/whatson-web/cms-bundle/CmsBundle/';
+                $bundleDirPath = $kernel->getRootDir().'/../vendor/whatson-web/cms-bundle/CmsBundle/';
+
                 break;
             case 'blog':
                 $bundleNameSpace = 'WH\BlogBundle';
                 $bundleName = 'WHBlogBundle';
-                $bundleDirPath = $kernel->getRootDir() . '/../vendor/whatson-web/blog-bundle/BlogBundle/';
+                $bundleDirPath = $kernel->getRootDir().'/../vendor/whatson-web/blog-bundle/BlogBundle/';
+
                 break;
         }
 
@@ -90,5 +91,4 @@ class SrcBundleInstallator
 
         return true;
     }
-
 }

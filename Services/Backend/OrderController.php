@@ -10,13 +10,10 @@ use WH\BackendBundle\Controller\Backend\BaseControllerInterface;
 use WH\LibBundle\Utils\Inflector;
 
 /**
- * Class OrderController
- *
- * @package WH\BackendBundle\Services\Backend
+ * Class OrderController.
  */
 class OrderController extends BaseController implements BaseControllerInterface
 {
-
     protected $container;
 
     /**
@@ -48,8 +45,7 @@ class OrderController extends BaseController implements BaseControllerInterface
 
         $entityRepository = $doctrine->getRepository($this->getRepositoryName($entityPathConfig));
 
-        if ($request->getMethod() == 'POST') {
-
+        if ('POST' === $request->getMethod()) {
             $em = $doctrine->getManager();
 
             $data = $request->request->all();
@@ -58,14 +54,13 @@ class OrderController extends BaseController implements BaseControllerInterface
                 'all',
                 [
                     'conditions' => [
-                        Inflector::camelize($entityPathConfig['entity']) . '.id' => $data['ids'],
+                        Inflector::camelize($entityPathConfig['entity']).'.id' => $data['ids'],
                     ],
                 ]
             );
             $orderedEntities = [];
 
             switch ($config['sortableType']) {
-
                 case 'tree':
                     $existingLftRgt = [];
                     foreach ($entities as $entity) {
@@ -90,7 +85,6 @@ class OrderController extends BaseController implements BaseControllerInterface
                     $em->flush();
 
                     break;
-
                 case 'field':
                     foreach ($entities as $entity) {
                         $orderedEntities[$entity->getId()] = $entity;
@@ -99,7 +93,7 @@ class OrderController extends BaseController implements BaseControllerInterface
                     foreach ($data['ids'] as $key => $id) {
                         $orderedEntity = $orderedEntities[$id];
 
-                        $orderedEntity->{'set' . ucfirst($config['sortableField'])}(sizeof($data['ids']) - $key);
+                        $orderedEntity->{'set'.ucfirst($config['sortableField'])}(sizeof($data['ids']) - $key);
 
                         $em->persist($orderedEntity);
                         $em->flush();
@@ -111,14 +105,14 @@ class OrderController extends BaseController implements BaseControllerInterface
             return new JsonResponse(
                 [
                     'success' => true,
-                    'reload'  => true,
+                    'reload' => true,
                 ]
             );
         }
 
         return new JsonResponse(
             [
-                'success'  => true,
+                'success' => true,
                 'redirect' => $this->getActionUrl(
                     $entityPathConfig,
                     'index',

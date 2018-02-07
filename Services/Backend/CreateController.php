@@ -12,13 +12,10 @@ use WH\BackendBundle\Controller\Backend\BaseController;
 use WH\BackendBundle\Controller\Backend\BaseControllerInterface;
 
 /**
- * Class CreateController
- *
- * @package WH\BackendBundle\Services\Backend
+ * Class CreateController.
  */
 class CreateController extends BaseController implements BaseControllerInterface
 {
-
     public $container;
 
     public $modal = false;
@@ -68,7 +65,7 @@ class CreateController extends BaseController implements BaseControllerInterface
 
         if ($form->isSubmitted()) {
             $response = $this->handleFormSubmission($form);
-            if ($response != false) {
+            if (false !== $response) {
                 return $response;
             }
 
@@ -105,7 +102,7 @@ class CreateController extends BaseController implements BaseControllerInterface
             throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "formFields"');
         }
 
-        if (isset($config['modal']) && $config['modal'] == 'false') {
+        if (isset($config['modal']) && 'false' === $config['modal']) {
             $this->modal = false;
         }
 
@@ -162,10 +159,10 @@ class CreateController extends BaseController implements BaseControllerInterface
             $argument = explode('.', $argument);
 
             $argumentEntityRepositoryName = '';
-            if ($this->entityPathConfig['bundlePrefix'] != '') {
+            if ('' !== $this->entityPathConfig['bundlePrefix']) {
                 $argumentEntityRepositoryName .= $this->entityPathConfig['bundlePrefix'];
             }
-            $argumentEntityRepositoryName .= $this->entityPathConfig['bundle'] . ':' . ucfirst($argument[0]);
+            $argumentEntityRepositoryName .= $this->entityPathConfig['bundle'].':'.ucfirst($argument[0]);
 
             if (isset($globalConfig['repositories'][$argument[0]])) {
                 $argumentEntityRepositoryName = $globalConfig['repositories'][$argument[0]];
@@ -175,11 +172,11 @@ class CreateController extends BaseController implements BaseControllerInterface
                 'one',
                 [
                     'conditions' => [
-                        $argument[0] . '.' . $argument[1] => $value,
+                        $argument[0].'.'.$argument[1] => $value,
                     ],
                 ]
             );
-            $data->{'set' . ucfirst($argument[0])}($argumentValue);
+            $data->{'set'.ucfirst($argument[0])}($argumentValue);
         }
 
         return $data;
@@ -194,7 +191,6 @@ class CreateController extends BaseController implements BaseControllerInterface
     {
         $data = $form->getData();
         if ($form->isValid()) {
-
             $this->saveEntity($data);
 
             return $this->redirectAfterSave($data);
@@ -225,19 +221,18 @@ class CreateController extends BaseController implements BaseControllerInterface
             $redirectUrl = $this->getActionUrl($this->entityPathConfig, $config['redirectionAction'], $data, true);
         } else {
             $redirectUrl = $this->getActionUrl($this->entityPathConfig, 'index', $data, true);
-            if ($this->request->query->get('submitButton') && $this->request->query->get(
+            if ($this->request->query->get('submitButton') && 'createEdit' === $this->request->query->get(
                     'submitButton'
-                ) == 'createEdit'
+                )
             ) {
                 $redirectUrl = $this->getActionUrl($this->entityPathConfig, 'update', $data, true);
             }
         }
 
         if ($this->request->isXmlHttpRequest()) {
-
             return new JsonResponse(
                 [
-                    'success'  => true,
+                    'success' => true,
                     'redirect' => $redirectUrl,
                 ]
             );
@@ -280,5 +275,4 @@ class CreateController extends BaseController implements BaseControllerInterface
 
         return $renderVars;
     }
-
 }

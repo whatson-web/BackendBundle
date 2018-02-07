@@ -11,13 +11,10 @@ use WH\BackendBundle\Controller\Backend\BaseControllerInterface;
 use WH\LibBundle\Utils\Inflector;
 
 /**
- * Class IndexController
- *
- * @package WH\BackendBundle\Services\Backend
+ * Class IndexController.
  */
 class IndexController extends BaseController implements BaseControllerInterface
 {
-
     public $container;
 
     public $search = false;
@@ -72,7 +69,7 @@ class IndexController extends BaseController implements BaseControllerInterface
 
         if ($this->search) {
             $return = $this->handleSearchForm();
-            if ($this->request->getMethod() == 'POST') {
+            if ('POST' === $this->request->getMethod()) {
                 return $return;
             }
         }
@@ -143,23 +140,25 @@ class IndexController extends BaseController implements BaseControllerInterface
     }
 
     /**
+     * @param mixed $config
+     *
      * @return bool
      */
     public function validConfig($config)
     {
         $this->config = $config;
 
-        if (isset($this->config['search']) && $this->config['search'] == 'true') {
+        if (isset($this->config['search']) && 'true' === $this->config['search']) {
             $this->validConfigSearch();
             $this->search = true;
         }
 
-        if (isset($this->config['tree']) && $this->config['tree'] == 'true') {
+        if (isset($this->config['tree']) && 'true' === $this->config['tree']) {
             $this->validConfigTree();
             $this->tree = true;
         }
 
-        if (isset($this->config['sortable']) && $this->config['sortable'] == 'true') {
+        if (isset($this->config['sortable']) && 'true' === $this->config['sortable']) {
             $this->sortable = true;
         }
 
@@ -207,7 +206,7 @@ class IndexController extends BaseController implements BaseControllerInterface
     }
 
     /**
-     * * Gère les propriétés à envoyer à la vue pour l'affichage de la liste des entités dans le tableau
+     * * Gère les propriétés à envoyer à la vue pour l'affichage de la liste des entités dans le tableau.
      *
      * @return bool
      */
@@ -268,7 +267,7 @@ class IndexController extends BaseController implements BaseControllerInterface
 
         $form = $this->getForm($formFields);
 
-        if ($this->request->getMethod() == 'POST') {
+        if ('POST' === $this->request->getMethod()) {
             return $this->handleSearchFormSubmission($form);
         }
 
@@ -290,6 +289,7 @@ class IndexController extends BaseController implements BaseControllerInterface
                                 ],
                             ]
                         );
+
                         break;
                 }
             }
@@ -346,12 +346,12 @@ class IndexController extends BaseController implements BaseControllerInterface
                                 $date = new \DateTime($date);
                                 $formData[$formFieldSlug] = $date;
                             }
-                            break;
 
+                            break;
                         case 'datetime':
                             $value = $data[$formFieldSlug];
 
-                            if ($value['date']['day'] == '' || $value['date']['month'] == '' || $value['date']['year'] == '' || $value['time']['minute'] == '' || $value['time']['hour'] == '') {
+                            if ($value['date']['day'] === '' || $value['date']['month'] === '' || $value['date']['year'] === '' || $value['time']['minute'] === '' || $value['time']['hour'] === '') {
                                 $formData[$formFieldSlug] = null;
                             } else {
                                 $date = $value['date']['year'].'-';
@@ -362,14 +362,15 @@ class IndexController extends BaseController implements BaseControllerInterface
                                 $date = new \DateTime($date);
                                 $formData[$formFieldSlug] = $date;
                             }
-                            break;
 
+                            break;
                         case 'checkbox':
                             $value = $data[$formFieldSlug];
 
-                            if ($value == 1) {
+                            if (1 === $value) {
                                 $formData[$formFieldSlug] = true;
                             }
+
                             break;
                     }
                 }
@@ -400,7 +401,7 @@ class IndexController extends BaseController implements BaseControllerInterface
     }
 
     /**
-     * Gère la liste des entités lorsqu'il n'y a pas de pagination
+     * Gère la liste des entités lorsqu'il n'y a pas de pagination.
      *
      * @return bool
      */
@@ -427,7 +428,7 @@ class IndexController extends BaseController implements BaseControllerInterface
     }
 
     /**
-     * Gère la pagination
+     * Gère la pagination.
      *
      * @return bool
      */
@@ -447,8 +448,8 @@ class IndexController extends BaseController implements BaseControllerInterface
         $paginator = $entityRepository->get(
             'paginate',
             [
-                'paginate'   => [
-                    'page'  => $paginationPage,
+                'paginate' => [
+                    'page' => $paginationPage,
                     'limit' => $paginationLimit,
                 ],
                 'conditions' => $this->conditions,
@@ -458,10 +459,10 @@ class IndexController extends BaseController implements BaseControllerInterface
         $this->renderVars['tablePanelProperties']['entities'] = $entities;
 
         $pagination = [
-            'page'  => $paginationPage,
+            'page' => $paginationPage,
             'limit' => $paginationLimit,
             'count' => $paginator['count'],
-            'url'   => $this->getActionUrl($this->entityPathConfig, 'index', $this->arguments),
+            'url' => $this->getActionUrl($this->entityPathConfig, 'index', $this->arguments),
         ];
 
         $this->renderVars['pagination'] = $pagination;
@@ -481,14 +482,13 @@ class IndexController extends BaseController implements BaseControllerInterface
         $conditions = [];
 
         foreach ($formFields as $formField => $properties) {
-
             if (!isset($data[$formField])) {
                 continue;
             }
 
             $value = $data[$formField];
 
-            if ($value == null) {
+            if (null === $value) {
                 continue;
             }
 
@@ -506,31 +506,32 @@ class IndexController extends BaseController implements BaseControllerInterface
                 switch ($properties['conditionType']) {
                     case 'inferior':
                         $defaultExpression .= ' <';
-                        break;
 
+                        break;
                     case 'inferiorOrEqual':
                         $defaultExpression .= ' <=';
-                        break;
 
+                        break;
                     case 'superior':
                         $defaultExpression .= ' >';
-                        break;
 
+                        break;
                     case 'superiorOrEqual':
                         $defaultExpression .= ' >=';
-                        break;
 
+                        break;
                     case 'like':
                         $defaultExpression .= ' LIKE';
                         $value = '%'.$value.'%';
-                        break;
 
+                        break;
                     case 'equal':
                         $defaultExpression .= '';
-                        break;
 
+                        break;
                     case 'joinedEntity':
                         $defaultExpression = $formField.'.id';
+
                         break;
                 }
             }

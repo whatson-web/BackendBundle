@@ -8,13 +8,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Class SrcBundleInstallatorCommand
- *
- * @package WH\BackendBundle\Command
+ * Class SrcBundleInstallatorCommand.
  */
 class SrcBundleInstallatorCommand extends ContainerAwareCommand
 {
-
     protected function configure()
     {
         $this
@@ -39,5 +36,4 @@ class SrcBundleInstallatorCommand extends ContainerAwareCommand
 
         return true;
     }
-
 }

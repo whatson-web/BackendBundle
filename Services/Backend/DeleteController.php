@@ -8,13 +8,10 @@ use WH\BackendBundle\Controller\Backend\BaseControllerInterface;
 use WH\LibBundle\Utils\Inflector;
 
 /**
- * Class DeleteController
- *
- * @package WH\BackendBundle\Services\Backend
+ * Class DeleteController.
  */
 class DeleteController extends BaseController implements BaseControllerInterface
 {
-
     protected $container;
 
     /**
@@ -28,8 +25,8 @@ class DeleteController extends BaseController implements BaseControllerInterface
     }
 
     /**
-     * @param         $entityPathConfig
-     * @param         $id
+     * @param   $entityPathConfig
+     * @param   $id
      *
      * @return \Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
      */
@@ -41,7 +38,7 @@ class DeleteController extends BaseController implements BaseControllerInterface
             'one',
             [
                 'conditions' => [
-                    Inflector::camelize($entityPathConfig['entity']) . '.id' => $id,
+                    Inflector::camelize($entityPathConfig['entity']).'.id' => $id,
                 ],
             ]
         );
@@ -56,5 +53,4 @@ class DeleteController extends BaseController implements BaseControllerInterface
 
         return $this->redirect($this->getActionUrl($entityPathConfig, 'index', $data));
     }
-
 }

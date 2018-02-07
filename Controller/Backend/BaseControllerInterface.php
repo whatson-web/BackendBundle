@@ -3,13 +3,10 @@
 namespace WH\BackendBundle\Controller\Backend;
 
 /**
- * Class BaseControllerInterface
- *
- * @package WH\BackendBundle\Controller\Backend
+ * Class BaseControllerInterface.
  */
 interface BaseControllerInterface
 {
-
     /**
      * @param $config
      *

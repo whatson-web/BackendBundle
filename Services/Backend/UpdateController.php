@@ -12,15 +12,10 @@ use WH\BackendBundle\Controller\Backend\BaseControllerInterface;
 use WH\LibBundle\Utils\Inflector;
 
 /**
- * Class UpdateController
- *
- * @package WH\BackendBundle\Services\Backend
+ * Class UpdateController.
  */
 class UpdateController extends BaseController implements BaseControllerInterface
 {
-
-    protected $container;
-
     public $modal = false;
 
     public $renderVars;
@@ -35,6 +30,8 @@ class UpdateController extends BaseController implements BaseControllerInterface
     public $form;
     public $formFields;
     public $footerFormFields;
+
+    protected $container;
 
     /**
      * SearchController constructor.
@@ -83,9 +80,9 @@ class UpdateController extends BaseController implements BaseControllerInterface
         $this->renderVars['globalConfig'] = $this->globalConfig;
 
         $this->createUpdateForm();
-        if ($this->request->getMethod() == 'POST') {
+        if ('POST' === $this->request->getMethod()) {
             $response = $this->handleUpdateFormSubmission();
-            if ($response != false) {
+            if (false !== $response) {
                 return $response;
             }
 
@@ -122,13 +119,15 @@ class UpdateController extends BaseController implements BaseControllerInterface
     }
 
     /**
+     * @param mixed $config
+     *
      * @return bool
      */
     public function validConfig($config)
     {
         $this->config = $config;
 
-        if (isset($this->config['modal']) && $this->config['modal'] == 'true') {
+        if (isset($this->config['modal']) && 'true' === $this->config['modal']) {
             $this->validConfigPopup($this->config);
             $this->modal = true;
         } else {
@@ -315,16 +314,15 @@ class UpdateController extends BaseController implements BaseControllerInterface
             if ($this->request->isXmlHttpRequest()) {
                 return new JsonResponse(
                     [
-                        'success'  => true,
+                        'success' => true,
                         'redirect' => $redirectUrl,
                     ]
                 );
             }
 
             return $this->redirect($redirectUrl);
-        } else {
-            $this->form->setData($this->data);
         }
+        $this->form->setData($this->data);
 
         return true;
     }
@@ -427,5 +425,4 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
         return true;
     }
-
 }

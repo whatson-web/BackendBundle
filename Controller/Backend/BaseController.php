@@ -2,11 +2,9 @@
 
 namespace WH\BackendBundle\Controller\Backend;
 
-use Doctrine\ORM\EntityRepository;
 use FM\ElfinderBundle\Form\Type\ElFinderType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
@@ -24,20 +22,15 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Role\Role;
 use Symfony\Component\Yaml\Yaml;
-use WH\BackendBundle\Form\EntryType;
 use WH\LibBundle\Utils\Inflector;
 use WH\MediaBundle\Form\Backend\FileType;
 use WH\MediaBundle\Form\Backend\TranslatableFileType;
 
-
 /**
- * Class BaseController
- *
- * @package WH\BackendBundle\Controller\Backend
+ * Class BaseController.
  */
 class BaseController extends Controller implements BaseControllerInterface
 {
-
     public $bundlePrefix = '';
     public $bundle = '';
     public $entity = '';
@@ -50,9 +43,9 @@ class BaseController extends Controller implements BaseControllerInterface
     {
         return [
             'bundlePrefix' => $this->bundlePrefix,
-            'bundle'       => $this->bundle,
-            'entity'       => $this->entity,
-            'type'         => $this->type,
+            'bundle' => $this->bundle,
+            'entity' => $this->entity,
+            'type' => $this->type,
         ];
     }
 
@@ -137,7 +130,6 @@ class BaseController extends Controller implements BaseControllerInterface
     {
         $slug = '';
         if (!empty($entityPathConfig['bundlePrefix'])) {
-
             $slug .= $entityPathConfig['bundlePrefix'];
         }
         $slug .= $entityPathConfig['bundle'].$entityPathConfig['entity'];
@@ -156,7 +148,6 @@ class BaseController extends Controller implements BaseControllerInterface
     {
         $entityPath = '';
         if (!empty($entityPathConfig['bundlePrefix'])) {
-
             $entityPath .= $entityPathConfig['bundlePrefix'];
         }
         $entityPath .= '\\'.$entityPathConfig['bundle'].'\Entity\\'.$entityPathConfig['entity'];
@@ -173,51 +164,11 @@ class BaseController extends Controller implements BaseControllerInterface
     {
         $repositoryName = '';
         if (!empty($entityPathConfig['bundlePrefix'])) {
-
             $repositoryName .= $entityPathConfig['bundlePrefix'];
         }
         $repositoryName .= $entityPathConfig['bundle'].':'.$entityPathConfig['entity'];
 
         return $repositoryName;
-    }
-
-    /**
-     * @param $entityPathConfig
-     * @param $slug
-     *
-     * @return string
-     */
-    private function getYmlResourcesFilePath($entityPathConfig, $slug)
-    {
-        $rootDir = $this->get('kernel')->getRootDir();
-        $path = $rootDir.'/Resources/';
-        $bundleName = '';
-        if ($entityPathConfig['bundlePrefix'] != '') {
-            $bundleName .= $entityPathConfig['bundlePrefix'];
-        }
-        $bundleName .= $entityPathConfig['bundle'];
-        $path .= $bundleName.'/config/'.$entityPathConfig['type'].'/'.$entityPathConfig['entity'].'/'.$slug.'.yml';
-
-        return $path;
-    }
-
-    /**
-     * @param $entityPathConfig
-     * @param $slug
-     *
-     * @return string
-     */
-    private function getYmlFilePath($entityPathConfig, $slug)
-    {
-        $path = '@';
-        if ($entityPathConfig['bundlePrefix'] != '') {
-            $path .= $entityPathConfig['bundlePrefix'];
-        }
-        $path .= $entityPathConfig['bundle'].'/Resources/config/'.$entityPathConfig['type'].'/'.$entityPathConfig['entity'].'/'.$slug.'.yml';
-
-        $path = $this->get('kernel')->locateResource($path);
-
-        return $path;
     }
 
     /**
@@ -335,7 +286,7 @@ class BaseController extends Controller implements BaseControllerInterface
     public function getEntityForm($formFields, $entityPathConfig, $data, $formName = 'form', $formOptions = [])
     {
         $dataClass = $entityPathConfig['bundle'].'\Entity\\'.$entityPathConfig['entity'];
-        if ($entityPathConfig['bundlePrefix'] != '') {
+        if ('' !== $entityPathConfig['bundlePrefix']) {
             $dataClass = $entityPathConfig['bundlePrefix'].'\\'.$dataClass;
         }
 
@@ -433,7 +384,7 @@ class BaseController extends Controller implements BaseControllerInterface
             }
 
             $options = [
-                'label'    => (!empty($properties['label'])) ? $properties['label'] : false,
+                'label' => (!empty($properties['label'])) ? $properties['label'] : false,
                 'required' => false,
             ];
 
@@ -449,7 +400,6 @@ class BaseController extends Controller implements BaseControllerInterface
             }
 
             switch ($properties['type']) {
-
                 case 'checkbox':
                     $properties['type'] = CheckboxType::class;
 
@@ -458,7 +408,6 @@ class BaseController extends Controller implements BaseControllerInterface
                     }
 
                     break;
-
                 case 'choice':
                     $properties['type'] = ChoiceType::class;
 
@@ -485,12 +434,11 @@ class BaseController extends Controller implements BaseControllerInterface
                                 if (isset($properties['placeholder'])) {
                                     $options['placeholder'] = $properties['placeholder'];
                                 }
-                                break;
 
+                                break;
                             case 'parameter':
 
                                 switch ($properties['options']['parameter']) {
-
                                     case 'security.role_hierarchy.roles':
                                         $arrayRoles = $this->getUser()->getRoles();
 
@@ -509,12 +457,13 @@ class BaseController extends Controller implements BaseControllerInterface
                                         unset($choices['ROLE_USER']);
 
                                         $options['choices'] = $choices;
-                                        break;
 
+                                        break;
                                     default:
                                         $choices = $this->container->getParameter($properties['options']['parameter']);
                                         $choices = array_flip($choices);
                                         $options['choices'] = $choices;
+
                                         break;
                                 }
 
@@ -531,7 +480,6 @@ class BaseController extends Controller implements BaseControllerInterface
                     }
 
                     break;
-
                 case 'date':
                     $properties['type'] = DateType::class;
 
@@ -543,22 +491,21 @@ class BaseController extends Controller implements BaseControllerInterface
 
                         while ($startYear < $now->format('Y')) {
                             $years[] = $startYear;
-                            $startYear++;
+                            ++$startYear;
                         }
 
                         $options['years'] = $years;
                     }
 
                     break;
-
                 case 'datetime':
                     $properties['type'] = DateTimeType::class;
-                    break;
 
+                    break;
                 case 'email':
                     $properties['type'] = EmailType::class;
-                    break;
 
+                    break;
                 case 'entity':
                     $properties['type'] = EntityType::class;
                     $options['class'] = $properties['class'];
@@ -612,37 +559,37 @@ class BaseController extends Controller implements BaseControllerInterface
 
                         $options['query_builder'] = $query;
                     }
-                    break;
 
+                    break;
                 case 'hidden':
                     $properties['type'] = HiddenType::class;
-                    break;
 
+                    break;
                 case 'integer':
                     $properties['type'] = IntegerType::class;
-                    break;
 
+                    break;
                 case 'password':
                     $properties['type'] = PasswordType::class;
-                    break;
 
+                    break;
                 case 'text':
                     $properties['type'] = TextType::class;
 
                     if (isset($properties['disabled'])) {
                         $options['disabled'] = $properties['disabled'];
                     }
-                    break;
 
+                    break;
                 case 'number':
                     $properties['type'] = NumberType::class;
-                    $options['scale'] = (int)$properties['scale'];
-                    break;
+                    $options['scale'] = (int) $properties['scale'];
 
+                    break;
                 case 'textarea':
                     $properties['type'] = TextareaType::class;
-                    break;
 
+                    break;
                 case 'tinymce':
                     $properties['type'] = TextareaType::class;
 
@@ -651,29 +598,28 @@ class BaseController extends Controller implements BaseControllerInterface
                     $options['attr']['class'] = $class;
 
                     break;
-
                 case 'file':
                     $properties['type'] = \Symfony\Component\Form\Extension\Core\Type\FileType::class;
-                    break;
 
+                    break;
                 case 'wh_file':
                     $properties['type'] = FileType::class;
-                    break;
 
+                    break;
                 case 'wh_file_translatable':
                     $properties['type'] = TranslatableFileType::class;
-                    break;
 
+                    break;
                 case 'elfinder':
                     $properties['type'] = ElFinderType::class;
                     $properties['attr']['instance'] = 'default';
                     $properties['attr']['enable'] = true;
-                    break;
 
+                    break;
                 case 'form':
                     $properties['type'] = $properties['form'];
-                    break;
 
+                    break;
                 case 'collection':
                     $properties['type'] = CollectionType::class;
                     $options['entry_type'] = $properties['form'];
@@ -695,19 +641,20 @@ class BaseController extends Controller implements BaseControllerInterface
                     if (isset($properties['disableAdd'])) {
                         $options['attr']['disableAdd'] = $properties['disableAdd'];
                     }
-                    break;
 
+                    break;
                 case 'sub-form':
                     $properties['type'] = FormType::class;
-                    break;
 
+                    break;
                 case 'submit':
                     unset($options['required']);
                     $properties['type'] = SubmitType::class;
+
                     break;
             }
 
-            if ($properties['type'] == FormType::class) {
+            if (FormType::class === $properties['type']) {
                 $subForm = $this->getEntityForm(
                     $properties['fields'],
                     $properties['entityPathConfig'],
@@ -804,4 +751,42 @@ class BaseController extends Controller implements BaseControllerInterface
         return $value;
     }
 
+    /**
+     * @param $entityPathConfig
+     * @param $slug
+     *
+     * @return string
+     */
+    private function getYmlResourcesFilePath($entityPathConfig, $slug)
+    {
+        $rootDir = $this->get('kernel')->getRootDir();
+        $path = $rootDir.'/Resources/';
+        $bundleName = '';
+        if ('' !== $entityPathConfig['bundlePrefix']) {
+            $bundleName .= $entityPathConfig['bundlePrefix'];
+        }
+        $bundleName .= $entityPathConfig['bundle'];
+        $path .= $bundleName.'/config/'.$entityPathConfig['type'].'/'.$entityPathConfig['entity'].'/'.$slug.'.yml';
+
+        return $path;
+    }
+
+    /**
+     * @param $entityPathConfig
+     * @param $slug
+     *
+     * @return string
+     */
+    private function getYmlFilePath($entityPathConfig, $slug)
+    {
+        $path = '@';
+        if ('' !== $entityPathConfig['bundlePrefix']) {
+            $path .= $entityPathConfig['bundlePrefix'];
+        }
+        $path .= $entityPathConfig['bundle'].'/Resources/config/'.$entityPathConfig['type'].'/'.$entityPathConfig['entity'].'/'.$slug.'.yml';
+
+        $path = $this->get('kernel')->locateResource($path);
+
+        return $path;
+    }
 }

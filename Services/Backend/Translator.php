@@ -5,13 +5,10 @@ namespace WH\BackendBundle\Services\Backend;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Class Translator
- *
- * @package WH\BackendBundle\Services\Backend
+ * Class Translator.
  */
 class Translator
 {
-
     private $container;
     private $domain = 'WHBackendBundle';
 
