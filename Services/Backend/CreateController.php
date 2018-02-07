@@ -67,7 +67,12 @@ class CreateController extends BaseController implements BaseControllerInterface
         $form->handleRequest($request);
 
         if ($form->isSubmitted()) {
-            return $this->handleFormSubmission($form);
+            $response = $this->handleFormSubmission($form);
+            if ($response != false) {
+                return $response;
+            }
+
+            $this->renderVars['form'] = $form->createView();
         }
 
         $this->renderVars['title'] = $this->config['title'];
@@ -183,14 +188,19 @@ class CreateController extends BaseController implements BaseControllerInterface
     /**
      * @param Form $form
      *
-     * @return JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+     * @return bool|JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
     public function handleFormSubmission(Form $form)
     {
         $data = $form->getData();
-        $this->saveEntity($data);
+        if ($form->isValid()) {
 
-        return $this->redirectAfterSave($data);
+            $this->saveEntity($data);
+
+            return $this->redirectAfterSave($data);
+        }
+
+        return false;
     }
 
     /**

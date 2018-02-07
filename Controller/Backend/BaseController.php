@@ -27,6 +27,8 @@ use Symfony\Component\Yaml\Yaml;
 use WH\BackendBundle\Form\EntryType;
 use WH\LibBundle\Utils\Inflector;
 use WH\MediaBundle\Form\Backend\FileType;
+use WH\MediaBundle\Form\Backend\TranslatableFileType;
+
 
 /**
  * Class BaseController
@@ -69,7 +71,7 @@ class BaseController extends Controller implements BaseControllerInterface
 
         if (!file_exists($ymlPath)) {
             throw new NotFoundHttpException(
-                'Le fichier de configuration n\'existe pas. Il devrait être ici : ' . $ymlPath
+                'Le fichier de configuration n\'existe pas. Il devrait être ici : '.$ymlPath
             );
         }
 
@@ -104,7 +106,7 @@ class BaseController extends Controller implements BaseControllerInterface
 
         if (!file_exists($ymlPath)) {
             throw new NotFoundHttpException(
-                'Le fichier de configuration globale n\'existe pas. Il devrait être ici : ' . $ymlPath
+                'Le fichier de configuration globale n\'existe pas. Il devrait être ici : '.$ymlPath
             );
         }
 
@@ -138,7 +140,7 @@ class BaseController extends Controller implements BaseControllerInterface
 
             $slug .= $entityPathConfig['bundlePrefix'];
         }
-        $slug .= $entityPathConfig['bundle'] . $entityPathConfig['entity'];
+        $slug .= $entityPathConfig['bundle'].$entityPathConfig['entity'];
 
         $slug = Inflector::camelize($slug);
 
@@ -157,7 +159,7 @@ class BaseController extends Controller implements BaseControllerInterface
 
             $entityPath .= $entityPathConfig['bundlePrefix'];
         }
-        $entityPath .= '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
+        $entityPath .= '\\'.$entityPathConfig['bundle'].'\Entity\\'.$entityPathConfig['entity'];
 
         return $entityPath;
     }
@@ -174,7 +176,7 @@ class BaseController extends Controller implements BaseControllerInterface
 
             $repositoryName .= $entityPathConfig['bundlePrefix'];
         }
-        $repositoryName .= $entityPathConfig['bundle'] . ':' . $entityPathConfig['entity'];
+        $repositoryName .= $entityPathConfig['bundle'].':'.$entityPathConfig['entity'];
 
         return $repositoryName;
     }
@@ -188,13 +190,13 @@ class BaseController extends Controller implements BaseControllerInterface
     private function getYmlResourcesFilePath($entityPathConfig, $slug)
     {
         $rootDir = $this->get('kernel')->getRootDir();
-        $path = $rootDir . '/Resources/';
+        $path = $rootDir.'/Resources/';
         $bundleName = '';
         if ($entityPathConfig['bundlePrefix'] != '') {
             $bundleName .= $entityPathConfig['bundlePrefix'];
         }
         $bundleName .= $entityPathConfig['bundle'];
-        $path .= $bundleName . '/config/' . $entityPathConfig['type'] . '/' . $entityPathConfig['entity'] . '/' . $slug . '.yml';
+        $path .= $bundleName.'/config/'.$entityPathConfig['type'].'/'.$entityPathConfig['entity'].'/'.$slug.'.yml';
 
         return $path;
     }
@@ -211,7 +213,7 @@ class BaseController extends Controller implements BaseControllerInterface
         if ($entityPathConfig['bundlePrefix'] != '') {
             $path .= $entityPathConfig['bundlePrefix'];
         }
-        $path .= $entityPathConfig['bundle'] . '/Resources/config/' . $entityPathConfig['type'] . '/' . $entityPathConfig['entity'] . '/' . $slug . '.yml';
+        $path .= $entityPathConfig['bundle'].'/Resources/config/'.$entityPathConfig['type'].'/'.$entityPathConfig['entity'].'/'.$slug.'.yml';
 
         $path = $this->get('kernel')->locateResource($path);
 
@@ -225,7 +227,7 @@ class BaseController extends Controller implements BaseControllerInterface
      */
     public function getTranslateDomain($entityPathConfig)
     {
-        $translateDomain = $entityPathConfig['bundlePrefix'] . $entityPathConfig['bundle'] . '_' . $entityPathConfig['type'] . '_' . $entityPathConfig['entity'];
+        $translateDomain = $entityPathConfig['bundlePrefix'].$entityPathConfig['bundle'].'_'.$entityPathConfig['type'].'_'.$entityPathConfig['entity'];
 
         return $translateDomain;
     }
@@ -274,7 +276,7 @@ class BaseController extends Controller implements BaseControllerInterface
 
         if (!isset($globalConfig['actions'][$action])) {
             throw new NotFoundHttpException(
-                'L\'action "' . $action . '" n\'est pas déclarée dans le fichier de configuration globale'
+                'L\'action "'.$action.'" n\'est pas déclarée dans le fichier de configuration globale'
             );
         }
 
@@ -292,7 +294,7 @@ class BaseController extends Controller implements BaseControllerInterface
 
         if (isset($action['parameters']) && !$data) {
             throw new NotFoundHttpException(
-                'L\'action "' . $action['route'] . '" requiert des paramètres et aucune donnée n\'a été reçue'
+                'L\'action "'.$action['route'].'" requiert des paramètres et aucune donnée n\'a été reçue'
             );
         }
 
@@ -306,9 +308,9 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 foreach ($parameter as $field) {
                     if (!$fieldValue) {
-                        $fieldValue = $data->{'get' . Inflector::camelizeWithFirstLetterUpper($field)}();
+                        $fieldValue = $data->{'get'.Inflector::camelizeWithFirstLetterUpper($field)}();
                     } else {
-                        $fieldValue = $fieldValue->{'get' . Inflector::camelizeWithFirstLetterUpper($field)}();
+                        $fieldValue = $fieldValue->{'get'.Inflector::camelizeWithFirstLetterUpper($field)}();
                     }
 
                     $parameters[$routerParameterName] = $fieldValue;
@@ -332,9 +334,9 @@ class BaseController extends Controller implements BaseControllerInterface
      */
     public function getEntityForm($formFields, $entityPathConfig, $data, $formName = 'form', $formOptions = [])
     {
-        $dataClass = $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
+        $dataClass = $entityPathConfig['bundle'].'\Entity\\'.$entityPathConfig['entity'];
         if ($entityPathConfig['bundlePrefix'] != '') {
-            $dataClass = $entityPathConfig['bundlePrefix'] . '\\' . $dataClass;
+            $dataClass = $entityPathConfig['bundlePrefix'].'\\'.$dataClass;
         }
 
         $form = $this->container->get('form.factory')->createNamed(
@@ -463,21 +465,26 @@ class BaseController extends Controller implements BaseControllerInterface
                     if (isset($properties['options']['type'])) {
                         switch ($properties['options']['type']) {
                             case 'static':
-                                $field = 'get' . ucfirst($properties['options']['field']);
+                                $field = 'get'.ucfirst($properties['options']['field']);
                                 if (isset($properties['options']['entityPath'])) {
                                     $entityPath = $properties['options']['entityPath'];
                                 } else {
                                     $entityPath = '';
                                     if ($entityPathConfig['bundlePrefix']) {
-                                        $entityPath .= '\\' . $entityPathConfig['bundlePrefix'];
+                                        $entityPath .= '\\'.$entityPathConfig['bundlePrefix'];
                                     }
-                                    $entityPath .= '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
+                                    $entityPath .= '\\'.$entityPathConfig['bundle'].'\Entity\\'.$entityPathConfig['entity'];
                                 }
                                 $options['choices'] = array_flip($entityPath::$field());
                                 foreach ($options['choices'] as $key => $value) {
                                     $options['choices'][$key] = $value;
                                 }
+
                                 $options['placeholder'] = false;
+
+                                if (isset($properties['placeholder'])) {
+                                    $options['placeholder'] = $properties['placeholder'];
+                                }
                                 break;
 
                             case 'parameter':
@@ -640,7 +647,7 @@ class BaseController extends Controller implements BaseControllerInterface
                     $properties['type'] = TextareaType::class;
 
                     $class = (!empty($options['attr']['class'])) ? $options['attr']['class'] : '';
-                    $class = 'tinymce ' . $class;
+                    $class = 'tinymce '.$class;
                     $options['attr']['class'] = $class;
 
                     break;
@@ -651,6 +658,10 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'wh_file':
                     $properties['type'] = FileType::class;
+                    break;
+
+                case 'wh_file_translatable':
+                    $properties['type'] = TranslatableFileType::class;
                     break;
 
                 case 'elfinder':
@@ -777,13 +788,13 @@ class BaseController extends Controller implements BaseControllerInterface
         foreach ($variableFields as $variableField) {
             if (!$value) {
                 if (is_object($data)) {
-                    $value = $data->{'get' . ucfirst($variableField)}();
+                    $value = $data->{'get'.ucfirst($variableField)}();
                 } else {
                     $value = $data[$variableField];
                 }
             } else {
                 if (is_object($value)) {
-                    $value = $value->{'get' . ucfirst($variableField)}();
+                    $value = $value->{'get'.ucfirst($variableField)}();
                 } else {
                     $value = $value[$variableField];
                 }
