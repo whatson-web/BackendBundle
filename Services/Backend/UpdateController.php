@@ -64,7 +64,7 @@ class UpdateController extends BaseController implements BaseControllerInterface
             'one',
             [
                 'conditions' => [
-                    Inflector::camelize($entityPathConfig['entity']) . '.id' => $id,
+                    Inflector::camelize($entityPathConfig['entity']).'.id' => $id,
                 ],
             ]
         );
@@ -367,6 +367,20 @@ class UpdateController extends BaseController implements BaseControllerInterface
                                 );
 
                                 $formZone['listButtons'][$button] = $listButton;
+                            }
+                        }
+
+                        if (isset($formZone['fields'])) {
+                            foreach ($formZone['fields'] as $fieldSlug => $fieldProperties) {
+                                if (isset($fieldProperties['action'])) {
+                                    $fieldProperties['href'] = $this->getActionUrl(
+                                        $this->entityPathConfig,
+                                        $fieldProperties['action'],
+                                        $this->data
+                                    );
+                                }
+
+                                $formZone['fields'][$fieldSlug] = $fieldProperties;
                             }
                         }
 

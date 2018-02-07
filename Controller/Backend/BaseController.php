@@ -450,6 +450,11 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'checkbox':
                     $properties['type'] = CheckboxType::class;
+
+                    if (isset($properties['disabled'])) {
+                        $options['disabled'] = $properties['disabled'];
+                    }
+
                     break;
 
                 case 'choice':
@@ -522,6 +527,21 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'date':
                     $properties['type'] = DateType::class;
+
+                    if (isset($properties['startYear'])) {
+                        $years = [];
+
+                        $now = new \DateTime();
+                        $startYear = $properties['startYear'];
+
+                        while ($startYear < $now->format('Y')) {
+                            $years[] = $startYear;
+                            $startYear++;
+                        }
+
+                        $options['years'] = $years;
+                    }
+
                     break;
 
                 case 'datetime':
