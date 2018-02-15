@@ -12,5 +12,5 @@ interface BaseControllerInterface
      *
      * @return bool
      */
-    public function validConfig($config);
+    public function validConfig(array $config);
 }

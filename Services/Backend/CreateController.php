@@ -92,7 +92,7 @@ class CreateController extends BaseController implements BaseControllerInterface
      *
      * @return bool
      */
-    public function validConfig($config)
+    public function validConfig(array $config)
     {
         if (!isset($config['title'])) {
             throw new NotFoundHttpException('Le fichier de configuration ne contient pas le champ "title"');

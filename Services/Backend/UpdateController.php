@@ -123,7 +123,7 @@ class UpdateController extends BaseController implements BaseControllerInterface
      *
      * @return bool
      */
-    public function validConfig($config)
+    public function validConfig(array $config)
     {
         $this->config = $config;
 

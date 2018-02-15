@@ -61,11 +61,7 @@ class IndexController extends BaseController implements BaseControllerInterface
 
         $this->renderVars['globalConfig'] = $this->globalConfig;
 
-        $this->conditions = [];
-
-        foreach ($arguments as $condition => $value) {
-            $this->conditions[$condition] = $value;
-        }
+        $this->conditions = $this->getConditionsFromArguments($arguments);
 
         if ($this->search) {
             $return = $this->handleSearchForm();
@@ -144,7 +140,7 @@ class IndexController extends BaseController implements BaseControllerInterface
      *
      * @return bool
      */
-    public function validConfig($config)
+    public function validConfig(array $config)
     {
         $this->config = $config;
 
@@ -417,6 +413,7 @@ class IndexController extends BaseController implements BaseControllerInterface
                 'conditions' => $this->conditions,
             ]
         );
+
         $this->renderVars['tablePanelProperties']['entities'] = $entities;
 
         $this->renderVars['entityPathConfig'] = $this->entityPathConfig;

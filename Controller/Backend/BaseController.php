@@ -5,6 +5,7 @@ namespace WH\BackendBundle\Controller\Backend;
 use FM\ElfinderBundle\Form\Type\ElFinderType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
@@ -19,6 +20,7 @@ use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Form;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Role\Role;
 use Symfony\Component\Yaml\Yaml;
@@ -50,12 +52,12 @@ class BaseController extends Controller implements BaseControllerInterface
     }
 
     /**
-     * @param $entityPathConfig
-     * @param $action
+     * @param array  $entityPathConfig
+     * @param string $action
      *
      * @return mixed
      */
-    public function getConfig($entityPathConfig, $action)
+    public function getConfig(array $entityPathConfig, string $action)
     {
         $ymlPath = $this->getYmlFilePath(
             $entityPathConfig,
@@ -78,19 +80,18 @@ class BaseController extends Controller implements BaseControllerInterface
         }
 
         $config = Yaml::parse(file_get_contents($ymlPath));
+
         if ($this->validConfig($config)) {
             return $config;
         }
-
-        return [];
     }
 
     /**
-     * @param $entityPathConfig
+     * @param array $entityPathConfig
      *
      * @return mixed
      */
-    public function getGlobalConfig($entityPathConfig)
+    public function getGlobalConfig(array $entityPathConfig)
     {
         $ymlPath = $this->getYmlFilePath(
             $entityPathConfig,
@@ -122,173 +123,150 @@ class BaseController extends Controller implements BaseControllerInterface
     }
 
     /**
-     * @param $entityPathConfig
+     * @param array $entityPathConfig
      *
      * @return string
      */
-    public function getSlug($entityPathConfig)
+    public function getSlug(array $entityPathConfig)
     {
         $slug = '';
-        if (!empty($entityPathConfig['bundlePrefix'])) {
-            $slug .= $entityPathConfig['bundlePrefix'];
-        }
-        $slug .= $entityPathConfig['bundle'].$entityPathConfig['entity'];
-
+        $slug .= $entityPathConfig['bundlePrefix'];
+        $slug .= $entityPathConfig['bundle'];
+        $slug .= $entityPathConfig['entity'];
         $slug = Inflector::camelize($slug);
 
         return $slug;
     }
 
     /**
-     * @param $entityPathConfig
+     * @param array $entityPathConfig
      *
      * @return string
      */
-    public function getEntityPath($entityPathConfig)
+    public function getEntityPath(array $entityPathConfig)
     {
         $entityPath = '';
-        if (!empty($entityPathConfig['bundlePrefix'])) {
-            $entityPath .= $entityPathConfig['bundlePrefix'];
-        }
-        $entityPath .= '\\'.$entityPathConfig['bundle'].'\Entity\\'.$entityPathConfig['entity'];
+        $entityPath .= $entityPathConfig['bundlePrefix'];
+        $entityPath .= '\\';
+        $entityPath .= $entityPathConfig['bundle'];
+        $entityPath .= '\\Entity\\';
+        $entityPath .= $entityPathConfig['entity'];
 
         return $entityPath;
     }
 
     /**
-     * @param $entityPathConfig
+     * @param array $entityPathConfig
      *
      * @return string
      */
-    public function getRepositoryName($entityPathConfig)
+    public function getRepositoryName(array $entityPathConfig)
     {
         $repositoryName = '';
-        if (!empty($entityPathConfig['bundlePrefix'])) {
-            $repositoryName .= $entityPathConfig['bundlePrefix'];
-        }
-        $repositoryName .= $entityPathConfig['bundle'].':'.$entityPathConfig['entity'];
+        $repositoryName .= $entityPathConfig['bundlePrefix'];
+        $repositoryName .= $entityPathConfig['bundle'];
+        $repositoryName .= ':';
+        $repositoryName .= $entityPathConfig['entity'];
 
         return $repositoryName;
     }
 
     /**
-     * @param $entityPathConfig
+     * @param array $entityPathConfig
      *
-     * @return bool
+     * @return string
      */
-    public function getTranslateDomain($entityPathConfig)
+    public function getTranslateDomain(array $entityPathConfig)
     {
-        $translateDomain = $entityPathConfig['bundlePrefix'].$entityPathConfig['bundle'].'_'.$entityPathConfig['type'].'_'.$entityPathConfig['entity'];
+        $translateDomain = '';
+        $translateDomain .= $entityPathConfig['bundlePrefix'];
+        $translateDomain .= $entityPathConfig['bundle'];
+        $translateDomain .= '_';
+        $translateDomain .= $entityPathConfig['type'];
+        $translateDomain .= '_';
+        $translateDomain .= $entityPathConfig['entity'];
 
         return $translateDomain;
     }
 
     /**
-     * @param $config
+     * @param array $config
      *
      * @return bool
      */
-    public function validConfig($config)
+    public function validConfig(array $config)
     {
         return true;
     }
 
     /**
-     * @param      $configBreadcrumbs
-     * @param      $entityPathConfig
-     * @param null $data
+     * @param array $configBreadcrumbs
+     * @param array $entityPathConfig
+     * @param null  $data
      *
      * @return array
      */
-    public function getBreadcrumb($configBreadcrumbs, $entityPathConfig, $data = null)
+    public function getBreadcrumb(array $configBreadcrumbs, array $entityPathConfig, $data = null)
     {
         $breadcrumb = [];
 
         foreach ($configBreadcrumbs as $configBreadcrumb) {
-            $url = $this->getActionUrl($entityPathConfig, $configBreadcrumb['action'], $data);
+            $label = $configBreadcrumb['label'];
 
-            $breadcrumb[$configBreadcrumb['label']] = $url;
+            $url = $this->getActionUrl(
+                $entityPathConfig,
+                $configBreadcrumb['action'],
+                $data
+            );
+
+            $breadcrumb[$label] = $url;
         }
 
         return $breadcrumb;
     }
 
     /**
-     * @param      $entityPathConfig
-     * @param      $action
-     * @param null $data
-     * @param bool $absolutePath
+     * @param array  $entityPathConfig
+     * @param string $actionSlug
+     * @param null   $data
+     * @param bool   $absolutePath
      *
      * @return string
      */
-    public function getActionUrl($entityPathConfig, $action, $data = null, $absolutePath = false)
-    {
+    public function getActionUrl(
+        array $entityPathConfig,
+        string $actionSlug,
+        $data = null,
+        int $absolutePath = Router::ABSOLUTE_PATH
+    ) {
         $globalConfig = $this->getGlobalConfig($entityPathConfig);
 
-        if (!isset($globalConfig['actions'][$action])) {
-            throw new NotFoundHttpException(
-                'L\'action "'.$action.'" n\'est pas déclarée dans le fichier de configuration globale'
-            );
-        }
-
-        $action = $globalConfig['actions'][$action];
+        $action = $this->getActionFromGlobalConfig($globalConfig, $actionSlug);
 
         $route = $action['route'];
 
-        if (!isset($action['parameters'])) {
-            return $this->generateUrl($route, [], $absolutePath);
-        }
-
-        if (!$data && isset($globalConfig['defaultData'])) {
-            $data = $globalConfig['defaultData'];
-        }
-
-        if (isset($action['parameters']) && !$data) {
-            throw new NotFoundHttpException(
-                'L\'action "'.$action['route'].'" requiert des paramètres et aucune donnée n\'a été reçue'
-            );
-        }
-
-        $parameters = [];
-
-        foreach ($action['parameters'] as $routerParameterName => $parameter) {
-            if (is_object($data)) {
-                $parameter = explode('.', $parameter);
-
-                $fieldValue = null;
-
-                foreach ($parameter as $field) {
-                    if (!$fieldValue) {
-                        $fieldValue = $data->{'get'.Inflector::camelizeWithFirstLetterUpper($field)}();
-                    } else {
-                        $fieldValue = $fieldValue->{'get'.Inflector::camelizeWithFirstLetterUpper($field)}();
-                    }
-
-                    $parameters[$routerParameterName] = $fieldValue;
-                }
-            } elseif (is_array($data)) {
-                $parameters[$routerParameterName] = $data[$parameter];
-            }
-        }
+        $parameters = $this->getActionParameters($entityPathConfig, $actionSlug, $data);
 
         return $this->generateUrl($route, $parameters, $absolutePath);
     }
 
     /**
-     * @param        $formFields
-     * @param        $entityPathConfig
+     * @param array  $formFields
+     * @param array  $entityPathConfig
      * @param        $data
      * @param string $formName
      * @param array  $formOptions
      *
      * @return mixed|\Symfony\Component\Form\FormInterface
      */
-    public function getEntityForm($formFields, $entityPathConfig, $data, $formName = 'form', $formOptions = [])
-    {
-        $dataClass = $entityPathConfig['bundle'].'\Entity\\'.$entityPathConfig['entity'];
-        if ('' !== $entityPathConfig['bundlePrefix']) {
-            $dataClass = $entityPathConfig['bundlePrefix'].'\\'.$dataClass;
-        }
+    public function getEntityForm(
+        array $formFields,
+        array $entityPathConfig,
+        $data,
+        string $formName = 'form',
+        array $formOptions = []
+    ) {
+        $className = $this->getClassNameFromEntityPathConfig($entityPathConfig);
 
         $form = $this->container->get('form.factory')->createNamed(
             $formName,
@@ -296,7 +274,7 @@ class BaseController extends Controller implements BaseControllerInterface
             $data,
             array_merge(
                 [
-                    'data_class' => $dataClass,
+                    'data_class' => $className,
                 ],
                 $formOptions
             )
@@ -308,12 +286,12 @@ class BaseController extends Controller implements BaseControllerInterface
     }
 
     /**
-     * @param        $formFields
+     * @param array  $formFields
      * @param string $formName
      *
      * @return mixed
      */
-    public function getForm($formFields, $formName = 'searchForm')
+    public function getForm(array $formFields, string $formName = 'searchForm')
     {
         $form = $this->container->get('form.factory')->createNamedBuilder($formName);
 
@@ -323,295 +301,102 @@ class BaseController extends Controller implements BaseControllerInterface
     }
 
     /**
-     * @param $configFormFields
-     * @param $entityPathConfig
+     * @param array $configFormFields
+     * @param array $entityPathConfig
      *
      * @return array
      */
-    public function getFormFields($configFormFields, $entityPathConfig)
+    public function getFormFields(array $configFormFields, array $entityPathConfig)
     {
         $globalConfig = $this->getGlobalConfig($entityPathConfig);
 
+        $configFormFields = $this->prepareFormFields($configFormFields);
+
         $formFields = [];
 
-        if (is_array($configFormFields)) {
-            foreach ($configFormFields as $key => $configFormField) {
-                $formFieldSlug = null;
-                if (!is_array($configFormField) && preg_match('#.*\..*#', $configFormField)) {
-                    $formFieldSlug = $configFormField;
-                    $configFormField = explode('.', $configFormField);
-                    $configFormField = array_combine($configFormField, $configFormField);
-                }
-                if (is_array($configFormField)) {
-                    if (!$formFieldSlug) {
-                        $formFieldSlug = $key;
-                    }
+        foreach ($configFormFields as $key => $configFormField) {
+            $configDefaultFormField = $this->getVariableValue($key, $globalConfig['formFields']);
 
-                    if (isset($globalConfig['formFields'][$key])) {
-                        $formField = array_merge($globalConfig['formFields'][$key], $configFormField);
-                    } else {
-                        $formField = $configFormField;
-                    }
-                } else {
-                    if (is_integer($key)) {
-                        $formFieldSlug = $configFormField;
-                    } else {
-                        $formFieldSlug = $key;
-                    }
-
-                    $formField = $globalConfig['formFields'][$formFieldSlug];
-                }
-
-                $formFields[$formFieldSlug] = $formField;
+            if (is_array($configDefaultFormField)) {
+                $configFormField = array_merge($configDefaultFormField, $configFormField);
             }
+
+            $formFields[$key] = $configFormField;
         }
 
         return $formFields;
     }
 
     /**
-     * @param       $form
-     * @param       $formFields
+     * @param Form  $form
+     * @param array $formFields
      * @param array $entityPathConfig
      *
-     * @return mixed
+     * @return Form
      */
-    public function addFormFieldsToForm($form, $formFields, $entityPathConfig = [])
+    public function addFormFieldsToForm(Form $form, array $formFields, array $entityPathConfig = [])
     {
         foreach ($formFields as $formField => $properties) {
+            $fieldSlug = $formField;
+
             if (isset($properties['field'])) {
-                $formField = $properties['field'];
+                $fieldSlug = $properties['field'];
             }
 
-            $options = [
-                'label' => (!empty($properties['label'])) ? $properties['label'] : false,
-                'required' => false,
-            ];
+            $options = $this->getFormFieldDefaultOptions();
 
-            $optionsToGive = [
-                'attr',
-                'choice_label',
-                'class',
-            ];
-            foreach ($optionsToGive as $optionToGive) {
-                if (!empty($properties[$optionToGive])) {
-                    $options[$optionToGive] = $properties[$optionToGive];
-                }
-            }
+            $options = $this->getOverridedOptionsFromProperties($options, $properties);
+
+            $formFieldType = $this->getFormFieldType($properties);
 
             switch ($properties['type']) {
                 case 'checkbox':
-                    $properties['type'] = CheckboxType::class;
-
-                    if (isset($properties['disabled'])) {
-                        $options['disabled'] = $properties['disabled'];
-                    }
+                    $options = $this->getCheckboxOptions($options, $properties);
 
                     break;
                 case 'choice':
-                    $properties['type'] = ChoiceType::class;
-
-                    if (isset($properties['options']['type'])) {
-                        switch ($properties['options']['type']) {
-                            case 'static':
-                                $field = 'get'.ucfirst($properties['options']['field']);
-                                if (isset($properties['options']['entityPath'])) {
-                                    $entityPath = $properties['options']['entityPath'];
-                                } else {
-                                    $entityPath = '';
-                                    if ($entityPathConfig['bundlePrefix']) {
-                                        $entityPath .= '\\'.$entityPathConfig['bundlePrefix'];
-                                    }
-                                    $entityPath .= '\\'.$entityPathConfig['bundle'].'\Entity\\'.$entityPathConfig['entity'];
-                                }
-                                $options['choices'] = array_flip($entityPath::$field());
-                                foreach ($options['choices'] as $key => $value) {
-                                    $options['choices'][$key] = $value;
-                                }
-
-                                $options['placeholder'] = false;
-
-                                if (isset($properties['placeholder'])) {
-                                    $options['placeholder'] = $properties['placeholder'];
-                                }
-
-                                break;
-                            case 'parameter':
-
-                                switch ($properties['options']['parameter']) {
-                                    case 'security.role_hierarchy.roles':
-                                        $arrayRoles = $this->getUser()->getRoles();
-
-                                        $roles = [];
-                                        foreach ($arrayRoles as $arrayRole) {
-                                            $roles[] = new Role($arrayRole);
-                                        }
-
-                                        $roles = $this->get('security.role_hierarchy')->getReachableRoles($roles);
-
-                                        $choices = [];
-                                        foreach ($roles as $role) {
-                                            $choices[$role->getRole()] = $role->getRole();
-                                        }
-
-                                        unset($choices['ROLE_USER']);
-
-                                        $options['choices'] = $choices;
-
-                                        break;
-                                    default:
-                                        $choices = $this->container->getParameter($properties['options']['parameter']);
-                                        $choices = array_flip($choices);
-                                        $options['choices'] = $choices;
-
-                                        break;
-                                }
-
-                                break;
-                        }
-                    }
-
-                    if (isset($properties['empty_data'])) {
-                        $options['placeholder'] = $properties['empty_data'];
-                    }
-
-                    if (isset($properties['multiple'])) {
-                        $options['multiple'] = $properties['multiple'];
-                    }
+                    $options = $this->getChoiceOptions($options, $properties, $entityPathConfig);
 
                     break;
                 case 'date':
-                    $properties['type'] = DateType::class;
-
-                    if (isset($properties['startYear'])) {
-                        $years = [];
-
-                        $now = new \DateTime();
-                        $startYear = $properties['startYear'];
-
-                        while ($startYear < $now->format('Y')) {
-                            $years[] = $startYear;
-                            ++$startYear;
-                        }
-
-                        $options['years'] = $years;
-                    }
+                    $options = $this->getDateOptions($options, $properties);
 
                     break;
                 case 'datetime':
-                    $properties['type'] = DateTimeType::class;
-
                     break;
                 case 'email':
-                    $properties['type'] = EmailType::class;
-
                     break;
                 case 'entity':
-                    $properties['type'] = EntityType::class;
-                    $options['class'] = $properties['class'];
-
-                    if (isset($properties['choice_label'])) {
-                        $options['choice_label'] = $properties['choice_label'];
-
-                        $em = $this->container->get('doctrine')->getManager();
-
-                        $entityRepository = $em->getRepository($properties['class']);
-                        $query = $entityRepository->get('query');
-
-                        $options['query_builder'] = $query;
-                    }
-
-                    if (isset($properties['multiple'])) {
-                        $options['multiple'] = $properties['multiple'];
-                    }
-
-                    if (isset($properties['group_by'])) {
-                        $options['group_by'] = $properties['group_by'];
-                    }
-
-                    if (isset($properties['choices'])) {
-                        $options['choices'] = $properties['choices'];
-                    }
-
-                    if (isset($properties['custom_query_builder'])) {
-                        $em = $this->container->get('doctrine')->getManager();
-                        $entityRepository = $em->getRepository($properties['class']);
-
-                        $conditions = [];
-
-                        if (isset($properties['custom_query_builder']['conditions'])) {
-                            foreach ($properties['custom_query_builder']['conditions'] as $condition => $conditionValue) {
-                                if (is_int($condition)) {
-                                    $condition = $conditionValue;
-                                    $conditions[$condition] = $this->getVariableValue($condition, $form->getData());
-                                } else {
-                                    $conditions[$condition] = $conditionValue;
-                                }
-                            }
-                        }
-
-                        $query = $entityRepository->get(
-                            'query',
-                            [
-                                'conditions' => $conditions,
-                            ]
-                        );
-
-                        $options['query_builder'] = $query;
-                    }
+                    $options = $this->getEntityOptions($options, $properties);
 
                     break;
                 case 'hidden':
-                    $properties['type'] = HiddenType::class;
-
                     break;
                 case 'integer':
-                    $properties['type'] = IntegerType::class;
-
                     break;
                 case 'password':
-                    $properties['type'] = PasswordType::class;
-
                     break;
                 case 'text':
-                    $properties['type'] = TextType::class;
-
-                    if (isset($properties['disabled'])) {
-                        $options['disabled'] = $properties['disabled'];
-                    }
+                    $options = $this->getTextOptions($options, $properties);
 
                     break;
                 case 'number':
-                    $properties['type'] = NumberType::class;
-                    $options['scale'] = (int) $properties['scale'];
+                    $options = $this->getNumberOptions($options, $properties);
 
                     break;
                 case 'textarea':
-                    $properties['type'] = TextareaType::class;
-
                     break;
                 case 'tinymce':
-                    $properties['type'] = TextareaType::class;
-
-                    $class = (!empty($options['attr']['class'])) ? $options['attr']['class'] : '';
-                    $class = 'tinymce '.$class;
-                    $options['attr']['class'] = $class;
+                    $options = $this->getTinymceOptions($options, $properties);
 
                     break;
                 case 'file':
-                    $properties['type'] = \Symfony\Component\Form\Extension\Core\Type\FileType::class;
-
                     break;
                 case 'wh_file':
-                    $properties['type'] = FileType::class;
-
                     break;
                 case 'wh_file_translatable':
-                    $properties['type'] = TranslatableFileType::class;
-
                     break;
                 case 'elfinder':
-                    $properties['type'] = ElFinderType::class;
                     $properties['attr']['instance'] = 'default';
                     $properties['attr']['enable'] = true;
 
@@ -621,45 +406,23 @@ class BaseController extends Controller implements BaseControllerInterface
 
                     break;
                 case 'collection':
-                    $properties['type'] = CollectionType::class;
-                    $options['entry_type'] = $properties['form'];
-                    $options['allow_add'] = true;
-                    $options['allow_delete'] = true;
-                    $options['delete_empty'] = true;
-                    $options['delete_empty'] = true;
-                    $options['by_reference'] = false;
-                    $options['attr']['data-form-template'] = $properties['formTemplate'];
-
-                    if (isset($properties['formTemplateHead'])) {
-                        $options['attr']['data-form-template-head'] = $properties['formTemplateHead'];
-                    }
-
-                    if (isset($properties['sortable'])) {
-                        $options['attr']['data-sortable'] = true;
-                    }
-
-                    if (isset($properties['disableAdd'])) {
-                        $options['attr']['disableAdd'] = $properties['disableAdd'];
-                    }
+                    $options = $this->getCollectionOptions($options, $properties);
 
                     break;
                 case 'sub-form':
-                    $properties['type'] = FormType::class;
-
                     break;
                 case 'submit':
-                    unset($options['required']);
-                    $properties['type'] = SubmitType::class;
+                    $options = $this->getSubmitOptions($options, $properties);
 
                     break;
             }
 
-            if (FormType::class === $properties['type']) {
+            if (FormType::class === $formFieldType) {
                 $subForm = $this->getEntityForm(
                     $properties['fields'],
                     $properties['entityPathConfig'],
-                    $this->getVariableValue($formField, $form->getData()),
-                    $formField,
+                    $this->getVariableValue($fieldSlug, $form->getData()),
+                    $fieldSlug,
                     [
                         'auto_initialize' => false,
                     ]
@@ -668,8 +431,8 @@ class BaseController extends Controller implements BaseControllerInterface
                 $form->add($subForm);
             } else {
                 $form->add(
-                    $formField,
-                    $properties['type'],
+                    $fieldSlug,
+                    $formFieldType,
                     $options
                 );
             }
@@ -679,31 +442,39 @@ class BaseController extends Controller implements BaseControllerInterface
     }
 
     /**
-     * @param $arguments
+     * @param array $arguments
      *
      * @return array
      */
-    public function getDataFromArguments($arguments)
+    public function getConditionsFromArguments(array $arguments)
     {
-        $data = [];
+        $conditions = [];
+
         if (empty($arguments)) {
-            return $data;
+            return $conditions;
         }
 
-        foreach ($arguments as $condition => $value) {
-            $data[Inflector::transformConditionInConditionParameter($condition)] = $value;
+        foreach ($arguments as $conditionKey => $value) {
+            // Il faudrait le faire de façon récursive, là ça traite un seul niveau
+            if (is_array($value)) {
+                foreach ($value as $conditionSubKey => $conditionSubValue) {
+                    $conditions[$conditionKey.'.'.$conditionSubKey] = $conditionSubValue;
+                }
+            } else {
+                $conditions[$conditionKey] = $value;
+            }
         }
 
-        return $data;
+        return $conditions;
     }
 
     /**
-     * @param $fields
-     * @param $entityPathConfig
+     * @param array $fields
+     * @param array $entityPathConfig
      *
-     * @return mixed
+     * @return array
      */
-    public function transformActionIntoRoute($fields, $entityPathConfig)
+    public function transformActionIntoRoute(array $fields, array $entityPathConfig)
     {
         $globalConfig = $this->getGlobalConfig($entityPathConfig);
 
@@ -727,24 +498,21 @@ class BaseController extends Controller implements BaseControllerInterface
      *
      * @return string
      */
-    public function getVariableValue($variable, $data)
+    public function getVariableValue(string $variable, $data)
     {
-        $value = '';
-        $variableFields = explode('.', $variable);
+        $fields = explode('.', $variable);
 
-        foreach ($variableFields as $variableField) {
-            if (!$value) {
-                if (is_object($data)) {
-                    $value = $data->{'get'.ucfirst($variableField)}();
-                } else {
-                    $value = $data[$variableField];
-                }
+        $value = $data;
+
+        foreach ($fields as $field) {
+            $getMethodeName = 'get'.ucfirst($field);
+
+            if (is_object($value) && method_exists($value, $getMethodeName)) {
+                $value = $value->{$getMethodeName}();
+            } elseif (is_array($value) && isset($value[$field])) {
+                $value = $value[$field];
             } else {
-                if (is_object($value)) {
-                    $value = $value->{'get'.ucfirst($variableField)}();
-                } else {
-                    $value = $value[$variableField];
-                }
+                $value = null;
             }
         }
 
@@ -752,41 +520,594 @@ class BaseController extends Controller implements BaseControllerInterface
     }
 
     /**
-     * @param $entityPathConfig
-     * @param $slug
+     * @param array      $entityPathConfig
+     * @param string     $actionSlug
+     * @param null|mixed $data
+     *
+     * @return array
+     */
+    private function getActionParameters(array $entityPathConfig, string $actionSlug, $data = null)
+    {
+        $globalConfig = $this->getGlobalConfig($entityPathConfig);
+
+        $action = $this->getActionFromGlobalConfig($globalConfig, $actionSlug);
+
+        $parameters = [];
+
+        if (isset($action['parameters'])) {
+            if (null === $data) {
+                $data = $this->getDefaultDataFromGlobalConfig($globalConfig);
+            }
+
+            if (isset($action['parameters']) && !$data) {
+                throw new NotFoundHttpException(
+                    'L\'action "'.$action['route'].'" requiert des paramètres et aucune donnée n\'a été reçue'
+                );
+            }
+
+            $parameters = [];
+
+            foreach ($action['parameters'] as $routerParameterName => $parameter) {
+                $parameterValue = $this->getVariableValue($parameter, $data);
+
+                $parameters[$routerParameterName] = $parameterValue;
+            }
+        }
+
+        return $parameters;
+    }
+
+    /**
+     * @param array $configFormFields
+     *
+     * @return array
+     */
+    private function prepareFormFields(array $configFormFields)
+    {
+        $cleanedFormFields = [];
+
+        foreach ($configFormFields as $key => $configFormField) {
+            $formFieldSlug = $key;
+
+            $formField = $configFormField;
+
+            if (null === $configFormField) {
+                $formField = [];
+            }
+
+            if (is_integer($key)) {
+                $formFieldSlug = $configFormField;
+                $formField = [];
+            }
+
+            $cleanedFormFields[$formFieldSlug] = $formField;
+        }
+
+        return $cleanedFormFields;
+    }
+
+    /**
+     * @return array
+     */
+    private function getFormFieldDefaultOptions()
+    {
+        return [
+            'label' => false,
+            'required' => false,
+        ];
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function getOverridedOptionsFromProperties(array $options, array $properties)
+    {
+        $overridableOptions = [
+            'label',
+            'attr',
+            'choice_label',
+            'class',
+        ];
+
+        foreach ($overridableOptions as $overridableOption) {
+            if (!empty($properties[$overridableOption])) {
+                $options[$overridableOption] = $properties[$overridableOption];
+            }
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $properties
+     *
+     * @return mixed|string
+     */
+    private function getFormFieldType(array $properties)
+    {
+        switch ($properties['type']) {
+            case 'checkbox':
+                return CheckboxType::class;
+                break;
+            case 'choice':
+                return ChoiceType::class;
+                break;
+            case 'date':
+                return DateType::class;
+                break;
+            case 'datetime':
+                return DateTimeType::class;
+                break;
+            case 'email':
+                return EmailType::class;
+                break;
+            case 'entity':
+                return EntityType::class;
+                break;
+            case 'hidden':
+                return HiddenType::class;
+                break;
+            case 'integer':
+                return IntegerType::class;
+                break;
+            case 'password':
+                return PasswordType::class;
+                break;
+            case 'text':
+                return TextType::class;
+                break;
+            case 'number':
+                return NumberType::class;
+                break;
+            case 'textarea':
+                return TextareaType::class;
+                break;
+            case 'tinymce':
+                return TextareaType::class;
+                break;
+            case 'file':
+                return \Symfony\Component\Form\Extension\Core\Type\FileType::class;
+                break;
+            case 'wh_file':
+                return FileType::class;
+                break;
+            case 'wh_file_translatable':
+                return TranslatableFileType::class;
+                break;
+            case 'elfinder':
+                return ElFinderType::class;
+                break;
+            case 'form':
+                return $properties['form'];
+                break;
+            case 'collection':
+                return CollectionType::class;
+                break;
+            case 'sub-form':
+                return FormType::class;
+                break;
+            case 'submit':
+                return SubmitType::class;
+                break;
+        }
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function getCheckboxOptions(array $options, array $properties)
+    {
+        if (isset($properties['disabled'])) {
+            $options['disabled'] = $properties['disabled'];
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     * @param array $entityPathConfig
+     *
+     * @return array
+     */
+    private function getChoiceOptions(array $options, array $properties, array $entityPathConfig = [])
+    {
+        if (isset($properties['empty_data'])) {
+            $options['placeholder'] = $properties['empty_data'];
+        }
+
+        if (isset($properties['multiple'])) {
+            $options['multiple'] = $properties['multiple'];
+        }
+
+        if (isset($properties['options']['type'])) {
+            switch ($properties['options']['type']) {
+                case 'static':
+                    $options = $this->getStaticChoiceOptions($options, $properties, $entityPathConfig);
+
+                    break;
+                case 'parameter':
+                    $options = $this->getParameterChoiceOptions($options, $properties, $entityPathConfig);
+
+                    break;
+            }
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     * @param array $entityPathConfig
+     *
+     * @return array
+     */
+    private function getStaticChoiceOptions(array $options, array $properties, array $entityPathConfig = [])
+    {
+        $field = 'get'.ucfirst($properties['options']['field']);
+
+        $entityPath = $this->getClassNameFromEntityPathConfig($entityPathConfig);
+
+        if (isset($properties['options']['entityPath'])) {
+            $entityPath = $properties['options']['entityPath'];
+        }
+
+        $options['choices'] = array_flip($entityPath::$field());
+
+        foreach ($options['choices'] as $key => $value) {
+            $options['choices'][$key] = $value;
+        }
+
+        $options['placeholder'] = false;
+
+        if (isset($properties['placeholder'])) {
+            $options['placeholder'] = $properties['placeholder'];
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     * @param array $entityPathConfig
+     *
+     * @return array
+     */
+    private function getParameterChoiceOptions(array $options, array $properties, array $entityPathConfig = [])
+    {
+        switch ($properties['options']['parameter']) {
+            case 'security.role_hierarchy.roles':
+                $arrayRoles = $this->getUser()->getRoles();
+
+                $roles = [];
+                foreach ($arrayRoles as $arrayRole) {
+                    $roles[] = new Role($arrayRole);
+                }
+
+                $roles = $this->get('security.role_hierarchy')->getReachableRoles($roles);
+
+                $choices = [];
+                foreach ($roles as $role) {
+                    $choices[$role->getRole()] = $role->getRole();
+                }
+
+                unset($choices['ROLE_USER']);
+
+                $options['choices'] = $choices;
+
+                break;
+            default:
+                $choices = $this->container->getParameter($properties['options']['parameter']);
+                $choices = array_flip($choices);
+                $options['choices'] = $choices;
+
+                break;
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function getDateOptions(array $options, array $properties)
+    {
+        if (isset($properties['startYear'])) {
+            $years = [];
+
+            $now = new \DateTime();
+            $startYear = $properties['startYear'];
+
+            while ($startYear < $now->format('Y')) {
+                $years[] = $startYear;
+                ++$startYear;
+            }
+
+            $options['years'] = $years;
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function getEntityOptions(array $options, array $properties)
+    {
+        $options['class'] = $properties['class'];
+
+        if (isset($properties['choice_label'])) {
+            $options['choice_label'] = $properties['choice_label'];
+
+            $em = $this->container->get('doctrine')->getManager();
+
+            $entityRepository = $em->getRepository($properties['class']);
+            $query = $entityRepository->get('query');
+
+            $options['query_builder'] = $query;
+        }
+
+        if (isset($properties['multiple'])) {
+            $options['multiple'] = $properties['multiple'];
+        }
+
+        if (isset($properties['group_by'])) {
+            $options['group_by'] = $properties['group_by'];
+        }
+
+        if (isset($properties['choices'])) {
+            $options['choices'] = $properties['choices'];
+        }
+
+        if (isset($properties['custom_query_builder'])) {
+            $em = $this->container->get('doctrine')->getManager();
+            $entityRepository = $em->getRepository($properties['class']);
+
+            $conditions = [];
+
+            if (isset($properties['custom_query_builder']['conditions'])) {
+                foreach ($properties['custom_query_builder']['conditions'] as $condition => $conditionValue) {
+                    if (is_int($condition)) {
+                        $condition = $conditionValue;
+                        $conditions[$condition] = $this->getVariableValue($condition, $form->getData());
+                    } else {
+                        $conditions[$condition] = $conditionValue;
+                    }
+                }
+            }
+
+            $query = $entityRepository->get(
+                'query',
+                [
+                    'conditions' => $conditions,
+                ]
+            );
+
+            $options['query_builder'] = $query;
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function getTextOptions(array $options, array $properties)
+    {
+        if (isset($properties['disabled'])) {
+            $options['disabled'] = $properties['disabled'];
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function getNumberOptions(array $options, array $properties)
+    {
+        if (!empty($properties['scale'])) {
+            $options['scale'] = (int) $properties['scale'];
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function getTinymceOptions(array $options, array $properties)
+    {
+        $class = (!empty($options['attr']['class'])) ? $options['attr']['class'] : '';
+        $class = 'tinymce '.$class;
+        $options['attr']['class'] = $class;
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function getCollectionOptions(array $options, array $properties)
+    {
+        $options['entry_type'] = $properties['form'];
+        $options['allow_add'] = true;
+        $options['allow_delete'] = true;
+        $options['delete_empty'] = true;
+        $options['delete_empty'] = true;
+        $options['by_reference'] = false;
+        $options['attr']['data-form-template'] = $properties['formTemplate'];
+
+        if (isset($properties['formTemplateHead'])) {
+            $options['attr']['data-form-template-head'] = $properties['formTemplateHead'];
+        }
+
+        if (isset($properties['sortable'])) {
+            $options['attr']['data-sortable'] = true;
+        }
+
+        if (isset($properties['disableAdd'])) {
+            $options['attr']['disableAdd'] = $properties['disableAdd'];
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function getSubmitOptions(array $options, array $properties)
+    {
+        unset($options['required']);
+
+        return $options;
+    }
+
+    /**
+     * @param array  $entityPathConfig
+     * @param string $slug
      *
      * @return string
      */
-    private function getYmlResourcesFilePath($entityPathConfig, $slug)
+    private function getYmlResourcesFilePath(array $entityPathConfig, string $slug)
     {
         $rootDir = $this->get('kernel')->getRootDir();
-        $path = $rootDir.'/Resources/';
-        $bundleName = '';
-        if ('' !== $entityPathConfig['bundlePrefix']) {
-            $bundleName .= $entityPathConfig['bundlePrefix'];
-        }
-        $bundleName .= $entityPathConfig['bundle'];
-        $path .= $bundleName.'/config/'.$entityPathConfig['type'].'/'.$entityPathConfig['entity'].'/'.$slug.'.yml';
+        $bundleName = $this->getBundleName($entityPathConfig);
+
+        $path = $rootDir;
+        $path .= '/Resources/';
+        $path .= $bundleName;
+        $path .= '/config/';
+        $path .= $entityPathConfig['type'];
+        $path .= '/';
+        $path .= $entityPathConfig['entity'];
+        $path .= '/';
+        $path .= $slug;
+        $path .= '.yml';
 
         return $path;
     }
 
     /**
-     * @param $entityPathConfig
-     * @param $slug
+     * @param array  $entityPathConfig
+     * @param string $slug
      *
      * @return string
      */
-    private function getYmlFilePath($entityPathConfig, $slug)
+    private function getYmlFilePath(array $entityPathConfig, string $slug)
     {
         $path = '@';
-        if ('' !== $entityPathConfig['bundlePrefix']) {
-            $path .= $entityPathConfig['bundlePrefix'];
-        }
-        $path .= $entityPathConfig['bundle'].'/Resources/config/'.$entityPathConfig['type'].'/'.$entityPathConfig['entity'].'/'.$slug.'.yml';
+        $path .= $entityPathConfig['bundlePrefix'];
+        $path .= $entityPathConfig['bundle'];
+        $path .= '/Resources/config/';
+        $path .= $entityPathConfig['type'];
+        $path .= '/';
+        $path .= $entityPathConfig['entity'];
+        $path .= '/';
+        $path .= $slug;
+        $path .= '.yml';
 
         $path = $this->get('kernel')->locateResource($path);
 
         return $path;
+    }
+
+    /**
+     * @param array $entityPathConfig
+     *
+     * @return string
+     */
+    private function getBundleName(array $entityPathConfig)
+    {
+        $bundleName = '';
+        $bundleName .= $entityPathConfig['bundlePrefix'];
+        $bundleName .= $entityPathConfig['bundle'];
+
+        return $bundleName;
+    }
+
+    /**
+     * @param array $globalConfig
+     *
+     * @return mixed
+     */
+    private function getActionFromGlobalConfig(array $globalConfig, string $actionSlug)
+    {
+        if (!isset($globalConfig['actions'][$actionSlug])) {
+            throw new NotFoundHttpException(
+                'L\'action "'.$actionSlug.'" n\'est pas déclarée dans le fichier de configuration globale'
+            );
+        }
+
+        $action = $globalConfig['actions'][$actionSlug];
+
+        return $action;
+    }
+
+    /**
+     * @param array $globalConfig
+     *
+     * @return null|mixed
+     */
+    private function getDefaultDataFromGlobalConfig(array $globalConfig)
+    {
+        $data = null;
+
+        if (isset($globalConfig['defaultData'])) {
+            $data = $globalConfig['defaultData'];
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param array $entityPathConfig
+     *
+     * @return string
+     */
+    private function getClassNameFromEntityPathConfig(array $entityPathConfig)
+    {
+        $className = '';
+
+        if ('' !== $entityPathConfig['bundlePrefix']) {
+            $className .= $entityPathConfig['bundlePrefix'];
+            $className .= '\\';
+        }
+
+        $className .= $entityPathConfig['bundle'];
+        $className .= '\\Entity\\';
+        $className .= $entityPathConfig['entity'];
+
+        return $className;
     }
 }
