@@ -349,53 +349,9 @@ class BaseController extends Controller implements BaseControllerInterface
 
             $formFieldType = $this->getFormFieldType($properties);
 
+            $options = $this->getFormFieldTypeOptions($options, $properties, $entityPathConfig);
+
             switch ($properties['type']) {
-                case 'checkbox':
-                    $options = $this->getCheckboxOptions($options, $properties);
-
-                    break;
-                case 'choice':
-                    $options = $this->getChoiceOptions($options, $properties, $entityPathConfig);
-
-                    break;
-                case 'date':
-                    $options = $this->getDateOptions($options, $properties);
-
-                    break;
-                case 'datetime':
-                    break;
-                case 'email':
-                    break;
-                case 'entity':
-                    $options = $this->getEntityOptions($options, $properties);
-
-                    break;
-                case 'hidden':
-                    break;
-                case 'integer':
-                    break;
-                case 'password':
-                    break;
-                case 'text':
-                    $options = $this->getTextOptions($options, $properties);
-
-                    break;
-                case 'number':
-                    $options = $this->getNumberOptions($options, $properties);
-
-                    break;
-                case 'textarea':
-                    break;
-                case 'tinymce':
-                    $options = $this->getTinymceOptions($options, $properties);
-
-                    break;
-                case 'file':
-                    break;
-                case 'wh_file':
-                    break;
-                case 'wh_file_translatable':
-                    break;
                 case 'elfinder':
                     $properties['attr']['instance'] = 'default';
                     $properties['attr']['enable'] = true;
@@ -403,16 +359,6 @@ class BaseController extends Controller implements BaseControllerInterface
                     break;
                 case 'form':
                     $properties['type'] = $properties['form'];
-
-                    break;
-                case 'collection':
-                    $options = $this->getCollectionOptions($options, $properties);
-
-                    break;
-                case 'sub-form':
-                    break;
-                case 'submit':
-                    $options = $this->getSubmitOptions($options, $properties);
 
                     break;
             }
@@ -622,77 +568,91 @@ class BaseController extends Controller implements BaseControllerInterface
     }
 
     /**
+     * @param array $options
+     * @param array $properties
+     * @param array $entityPathConfig
+     *
+     * @return array
+     */
+    private function getFormFieldTypeOptions(array $options, array $properties, array $entityPathConfig)
+    {
+        switch ($properties['type']) {
+            case 'checkbox':
+                return $this->getCheckboxOptions($options, $properties);
+            case 'choice':
+                return $this->getChoiceOptions($options, $properties, $entityPathConfig);
+            case 'date':
+                return $this->getDateOptions($options, $properties);
+            case 'entity':
+                return $this->getEntityOptions($options, $properties);
+            case 'text':
+                return $this->getTextOptions($options, $properties);
+            case 'number':
+                return $this->getNumberOptions($options, $properties);
+            case 'tinymce':
+                return $this->getTinymceOptions($options, $properties);
+            case 'collection':
+                return $this->getCollectionOptions($options, $properties);
+            case 'submit':
+                return $this->getSubmitOptions($options, $properties);
+        }
+
+        return $options;
+    }
+
+    /**
      * @param array $properties
      *
-     * @return mixed|string
+     * @return null|mixed|string
      */
     private function getFormFieldType(array $properties)
     {
         switch ($properties['type']) {
             case 'checkbox':
                 return CheckboxType::class;
-                break;
             case 'choice':
                 return ChoiceType::class;
-                break;
             case 'date':
                 return DateType::class;
-                break;
             case 'datetime':
                 return DateTimeType::class;
-                break;
             case 'email':
                 return EmailType::class;
-                break;
             case 'entity':
                 return EntityType::class;
-                break;
             case 'hidden':
                 return HiddenType::class;
-                break;
             case 'integer':
                 return IntegerType::class;
-                break;
             case 'password':
                 return PasswordType::class;
-                break;
             case 'text':
                 return TextType::class;
-                break;
             case 'number':
                 return NumberType::class;
-                break;
             case 'textarea':
                 return TextareaType::class;
-                break;
             case 'tinymce':
                 return TextareaType::class;
-                break;
             case 'file':
                 return \Symfony\Component\Form\Extension\Core\Type\FileType::class;
-                break;
             case 'wh_file':
                 return FileType::class;
-                break;
             case 'wh_file_translatable':
                 return TranslatableFileType::class;
-                break;
             case 'elfinder':
                 return ElFinderType::class;
-                break;
             case 'form':
                 return $properties['form'];
-                break;
             case 'collection':
                 return CollectionType::class;
-                break;
             case 'sub-form':
                 return FormType::class;
-                break;
             case 'submit':
                 return SubmitType::class;
-                break;
         }
+
+        return null;
     }
 
     /**
