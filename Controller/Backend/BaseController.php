@@ -451,16 +451,19 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'choice':
                     $properties['type'] = ChoiceType::class;
-
                     if (isset($properties['options']['type'])) {
                         switch ($properties['options']['type']) {
                             case 'static':
                                 $field = 'get' . ucfirst($properties['options']['field']);
-                                $entityPath = '';
-                                if ($entityPathConfig['bundlePrefix']) {
-                                    $entityPath .= '\\' . $entityPathConfig['bundlePrefix'];
+                                if (isset($properties['options']['entityPath'])) {
+                                    $entityPath = $properties['options']['entityPath'];
+                                } else {
+                                    $entityPath = '';
+                                    if ($entityPathConfig['bundlePrefix']) {
+                                        $entityPath .= '\\' . $entityPathConfig['bundlePrefix'];
+                                    }
+                                    $entityPath .= '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
                                 }
-                                $entityPath .= '\\' . $entityPathConfig['bundle'] . '\Entity\\' . $entityPathConfig['entity'];
                                 $options['choices'] = array_flip($entityPath::$field());
                                 foreach ($options['choices'] as $key => $value) {
                                     $options['choices'][$key] = $value;
@@ -504,7 +507,7 @@ class BaseController extends Controller implements BaseControllerInterface
                     }
 
                     if (isset($properties['empty_data'])) {
-                        $options['empty_value'] = $properties['empty_data'];
+                        $options['placeholder'] = $properties['empty_data'];
                     }
 
                     if (isset($properties['multiple'])) {
