@@ -480,7 +480,7 @@ class IndexController extends BaseController implements BaseControllerInterface
 
             $value = $data[$formField];
 
-            if ($value === null) {
+            if ($value === null || $value === '') {
                 continue;
             }
 
