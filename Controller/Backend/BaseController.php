@@ -10,6 +10,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
@@ -585,6 +586,14 @@ class BaseController extends Controller implements BaseControllerInterface
 
                 case 'text':
                     $properties['type'] = TextType::class;
+
+                    if (isset($properties['disabled'])) {
+                        $options['disabled'] = $properties['disabled'];
+                    }
+                    break;
+
+                case 'date':
+                    $properties['type'] = DateType::class;
 
                     if (isset($properties['disabled'])) {
                         $options['disabled'] = $properties['disabled'];
