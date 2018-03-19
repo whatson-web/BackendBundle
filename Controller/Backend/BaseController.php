@@ -21,6 +21,7 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Form;
+use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Role\Role;
 use Symfony\Component\Yaml\Yaml;
@@ -327,14 +328,8 @@ class BaseController extends Controller implements BaseControllerInterface
         return $formFields;
     }
 
-    /**
-     * @param Form  $form
-     * @param array $formFields
-     * @param array $entityPathConfig
-     *
-     * @return Form
-     */
-    public function addFormFieldsToForm(Form $form, array $formFields, array $entityPathConfig = [])
+
+    public function addFormFieldsToForm($form, array $formFields, array $entityPathConfig = [])
     {
         foreach ($formFields as $formField => $properties) {
             $fieldSlug = $formField;
