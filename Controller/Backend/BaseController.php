@@ -82,6 +82,10 @@ class BaseController extends Controller implements BaseControllerInterface
 
         $config = Yaml::parse(file_get_contents($ymlPath));
 
+        if (!is_array($config)) {
+            $config = [];
+        }
+
         if ($this->validConfig($config)) {
             return $config;
         }
