@@ -713,10 +713,10 @@ class BaseController extends Controller implements BaseControllerInterface
     {
         $field = 'get'.ucfirst($properties['options']['field']);
 
-        $entityPath = $this->getClassNameFromEntityPathConfig($entityPathConfig);
-
         if (isset($properties['options']['entityPath'])) {
             $entityPath = $properties['options']['entityPath'];
+        } else {
+            $entityPath = $this->getClassNameFromEntityPathConfig($entityPathConfig);
         }
 
         $options['choices'] = array_flip($entityPath::$field());
