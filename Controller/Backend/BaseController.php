@@ -586,6 +586,8 @@ class BaseController extends Controller implements BaseControllerInterface
                 return $this->getEntityOptions($options, $properties);
             case 'text':
                 return $this->getTextOptions($options, $properties);
+            case 'textarea':
+                return $this->getTextareaOptions($options, $properties);
             case 'number':
                 return $this->getNumberOptions($options, $properties);
             case 'tinymce':
@@ -870,6 +872,21 @@ class BaseController extends Controller implements BaseControllerInterface
      * @return array
      */
     private function getTextOptions(array $options, array $properties)
+    {
+        if (isset($properties['disabled'])) {
+            $options['disabled'] = $properties['disabled'];
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array $options
+     * @param array $properties
+     *
+     * @return array
+     */
+    private function getTextareaOptions(array $options, array $properties)
     {
         if (isset($properties['disabled'])) {
             $options['disabled'] = $properties['disabled'];

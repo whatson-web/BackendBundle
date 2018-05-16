@@ -276,7 +276,7 @@ class IndexController extends BaseController implements BaseControllerInterface
             if (isset($data[$formFieldSlug])) {
                 switch ($formFieldProperties['type']) {
                     case 'entity':
-                        $className = lcfirst(preg_replace('#.*:(.*)#', '$1', $formFieldProperties['class']));
+                        $className = lcfirst(preg_replace('#.*\\\(.*)#', '$1', $formFieldProperties['class']));
                         $data[$formFieldSlug] = $em->getRepository($formFieldProperties['class'])->get(
                             'one',
                             [
@@ -485,7 +485,7 @@ class IndexController extends BaseController implements BaseControllerInterface
 
             $value = $data[$formField];
 
-            if (null === $value) {
+            if (null === $value || '' === $value) {
                 continue;
             }
 
