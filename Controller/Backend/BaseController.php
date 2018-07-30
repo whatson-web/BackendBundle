@@ -38,6 +38,7 @@ class BaseController extends Controller implements BaseControllerInterface
     public $bundle = '';
     public $entity = '';
     public $type = 'Backend';
+    public $differentConfig = '';
 
     /**
      * @return array
@@ -49,6 +50,7 @@ class BaseController extends Controller implements BaseControllerInterface
             'bundle'       => $this->bundle,
             'entity'       => $this->entity,
             'type'         => $this->type,
+            'differentConfig' => $this->differentConfig,
         ];
     }
 
@@ -209,8 +211,12 @@ class BaseController extends Controller implements BaseControllerInterface
         if ($entityPathConfig['bundlePrefix'] != '') {
             $path .= $entityPathConfig['bundlePrefix'];
         }
-        $path .= $entityPathConfig['bundle'] . '/Resources/config/' . $entityPathConfig['type'] . '/' . $entityPathConfig['entity'] . '/' . $slug . '.yml';
-
+        if ($entityPathConfig['differentConfig'] != '') {
+            $path .= $entityPathConfig['bundle'] . '/Resources/config/' . $entityPathConfig['type'] . '/' . $entityPathConfig['differentConfig'] . '/' . $slug . '.yml';
+        }
+        else {
+            $path .= $entityPathConfig['bundle'].'/Resources/config/'.$entityPathConfig['type'].'/'.$entityPathConfig['entity'].'/'.$slug.'.yml';
+        }
         $path = $this->get('kernel')->locateResource($path);
 
         return $path;
@@ -470,6 +476,9 @@ class BaseController extends Controller implements BaseControllerInterface
                                     $options['choices'][$key] = $value;
                                 }
                                 $options['placeholder'] = false;
+                                if(isset($properties['disabled'])) {
+                                    $options['disabled'] = true;
+                                }
                                 break;
 
                             case 'parameter':
@@ -524,6 +533,10 @@ class BaseController extends Controller implements BaseControllerInterface
                 case 'entity':
                     $properties['type'] = EntityType::class;
                     $options['class'] = $properties['class'];
+
+                    if(isset($properties['disabled'])) {
+                        $options['disabled'] = true;
+                    }
 
                     if (isset($properties['choice_label'])) {
                         $options['choice_label'] = $properties['choice_label'];
