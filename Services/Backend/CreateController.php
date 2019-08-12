@@ -73,8 +73,9 @@ class CreateController extends BaseController implements BaseControllerInterface
         $this->renderVars['title'] = $this->config['title'];
 
         $view = '@WHBackendTemplate/BackendTemplate/View/modal.html.twig';
-        if (isset($config['view'])) {
-            $view = $config['view'];
+
+        if (isset($this->config['view'])) {
+            $view = $this->config['view'];
         }
 
         $this->renderVars = $this->translateRenderVars($entityPathConfig, $this->renderVars);
