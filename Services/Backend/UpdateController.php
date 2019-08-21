@@ -82,9 +82,14 @@ class UpdateController extends BaseController implements BaseControllerInterface
 
         $this->renderVars['globalConfig'] = $this->globalConfig;
 
+
+
         $this->createUpdateForm();
         if ($this->request->getMethod() == 'POST') {
-            return $this->handleUpdateFormSubmission();
+            $return = $this->handleUpdateFormSubmission();
+            if($return) {
+                return $return;
+            }
         }
         $this->renderUpdateForm();
 
@@ -291,28 +296,34 @@ class UpdateController extends BaseController implements BaseControllerInterface
         $this->form->handleRequest($this->request);
 
         if ($this->form->isSubmitted()) {
-            $data = $this->form->getData();
 
-            $em = $this->get('doctrine')->getManager();
+            if($this->form->isValid()) {
 
-            $em->persist($data);
-            $em->flush();
+                $data = $this->form->getData();
 
-            $redirectUrl = $this->getActionUrl($this->entityPathConfig, 'index', $data);
-            if ($this->form->has('saveAndStay') && $this->form->get('saveAndStay')->isClicked()) {
-                $redirectUrl = $this->getActionUrl($this->entityPathConfig, 'update', $data);
+                $em = $this->get('doctrine')->getManager();
+                $em->persist($data);
+                $em->flush();
+
+                $redirectUrl = $this->getActionUrl($this->entityPathConfig, 'index', $data);
+                if ($this->form->has('saveAndStay') && $this->form->get('saveAndStay')->isClicked()) {
+                    $redirectUrl = $this->getActionUrl($this->entityPathConfig, 'update', $data);
+                }
+
+                if ($this->request->isXmlHttpRequest()) {
+                    return new JsonResponse(
+                        [
+                            'success'  => true,
+                            'redirect' => $redirectUrl,
+                        ]
+                    );
+                }
+
+                return $this->redirect($redirectUrl);
+            } else {
+                return false;
+
             }
-
-            if ($this->request->isXmlHttpRequest()) {
-                return new JsonResponse(
-                    [
-                        'success'  => true,
-                        'redirect' => $redirectUrl,
-                    ]
-                );
-            }
-
-            return $this->redirect($redirectUrl);
         } else {
             $this->form->setData($this->data);
         }
