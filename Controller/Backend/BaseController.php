@@ -487,12 +487,16 @@ class BaseController extends Controller implements BaseControllerInterface
                         $years = [];
 
                         $now = new \DateTime();
+
                         $startYear = $properties['startYear'];
 
-                        while ($startYear < $now->format('Y')) {
+                      
+                        while ($startYear <= $now->format('Y')) {
+
                             $years[] = $startYear;
                             ++$startYear;
                         }
+
 
                         $options['years'] = $years;
                     }
